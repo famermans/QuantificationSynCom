@@ -23,11 +23,13 @@ library("dplyr")
 
 set.seed(777)
 
+
 #### Loading data ----
 
 Datapath <- "/media/projects1/Fabian/Oral microbiome/StrainRecognitionFC/data"
 fcsfiles <- list.files(path = Datapath, recursive = TRUE, pattern = ".fcs", full.names = TRUE)
 flowData <- flowCore::read.flowSet(files = fcsfiles, transformation = FALSE, emptyValue = F)
+
 
 #### Transformation of data ----
 attributes(flowData)
@@ -36,10 +38,10 @@ flowData_transformed <- transform(flowData,
                                   `FSC-A` = asinh(`FSC-A`),
                                   `SSC-A` = asinh(`SSC-A`),
                                   `BL1-A` = asinh(`BL1-A`),
-                                  `BL3-A` = asinh(`BL3-A`))
-param = c("FSC-A", "SSC-A", "BL1-A", "BL3-A")
+                                  `BL3-A` = asinh(`BL3-A`),
+                                  `BL1-H` = asinh(`BL1-H`))
+param = c("FSC-A", "SSC-A", "BL1-A", "BL3-A", "BL1-H")
 
-# remove(flowData)
 
 #### Extrating metadata from .fcs files ----
 sampleNames(flowData_transformed) <- substring(sampleNames(flowData_transformed), 0, nchar(sampleNames(flowData_transformed))-4)       # nchar takes a character vector and returns the number of characters in the vector
@@ -48,20 +50,38 @@ sampleNames(flowData_transformed) <- substring(sampleNames(flowData_transformed)
 metadata <- data.frame(do.call(rbind, lapply(strsplit(flowCore::sampleNames(flowData_transformed), "_"), rbind)))
 colnames(metadata) <- c("Date", "Experimenter", "ExperimentID", "Medium", "Timepoint", "Strain", "Replicate", "Dilution", "Stain", "Well")
 
-#### Quality control (contamination) ----
-## BHI2
+
+#### Quality control data ----
+### BHI2
+## Contamination 
 xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(1:296)],
-       scales = list(y = list(limits = c(0, 20)),
-                     x = list(limits = c(0, 20))),
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
        axis = axis.default, nbin = 125, main = "QC BHI2 (BL1-BL3)", xlab = "BL1-A", ylab = "BL3-A",
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
 
-## MM
+## Singlets
+xyplot(`BL1-H`~`BL1-A`, data = flowData_transformed[c(1:296)],
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0,16))),
+       axix = axis.default, nbin = 125, main = "QC singlets BHI2 (BL1-A ~ BL1-H)", xlab = "BL1-A", ylab = "BL1-H",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
+
+### MM
+## Contamination
 xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(297:503)],
-       scales = list(y = list(limits = c(0, 20)),
-                     x = list(limits = c(0, 20))),
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
        axis = axis.default, nbin = 125, main = "QC MM (BL1-BL3)", xlab = "BL1-A", ylab = "BL3-A",
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
+
+## Singlets
+xyplot(`BL1-H`~`BL1-A`, data = flowData_transformed[c(297:503)],
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0,16))),
+       axix = axis.default, nbin = 125, main = "QC singlets MM (BL1-A ~ BL1-H)", xlab = "BL1-A", ylab = "BL1-H",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
+
 
 #### Gating ----
 
@@ -120,3 +140,67 @@ xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(21:24)], filter = polyGate
                      x = list(limits = c(0, 16))),
        axis = axis.default, nbin = 125, main = "Quality check gating cells MM", xlab = "BL1-A", ylab = "BL3-A",
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+### General gate for both media
+## Gating cells based on BL1-BL3
+sqrcut5 <- matrix(c(5, 10, 14, 10, 5,
+                    2, 3, 4, 5, 6), ncol = 2, nrow = 5)
+colnames(sqrcut5) <- c("BL1-A", "BL3-A")
+polyGate5 <- polygonGate(.gate = sqrcut5, filterId = "Cells")
+
+# Gating quality check
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(21:24)], filter = polyGate5,
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "Quality check gating cells", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+
+#### Cell concentrations ----
+
+### Cell counts
+cells <- flowCore::filter(flowData_transformed, polyGate5)
+TotalCount <- summary(cells); TotalCount <- toTable(TotalCount)
+
+### Extracting volumes
+# Volumes are in µL
+vol <- as.numeric(flowCore::fsApply(flowData_transformed, FUN = function(x) x@description$`$VOL`))/1000
+
+### Concentrations
+# Calculating concentrations --> since we diluted 1000 times, concentrations will be in cells/µL
+cell_concentrations <- data.frame(Samples = flowCore::sampleNames(flowData_transformed),
+                                  Strain = metadata$Strain,
+                                  Concentration = (TotalCount$true*1000)/vol)
+
+
+#### Phenotypic diversity analysis ----
+
+### Normalization of data
+summary <- fsApply(x = flowData_transformed_gated, FUN = function(x) apply(x, 2, max), use.exprs = TRUE)
+max = max(summary[, "BL1-A"])
+mytrans <- function(x) x/max
+flowData_transformed_2 <- transform(flowData_transformed_gated,
+                                    `FSC-A` = mytrans(`FSC-A`), 
+                                    `SSC-A` = mytrans(`SSC-A`), 
+                                    `BL1-A` = mytrans(`BL1-A`), 
+                                    `BL3-A` = mytrans(`BL3-A`))
+
+### Calculating fingerprint with bw = 0.01
+fbasis <- flowBasis(flowData_transformed_2, param, nbin = 128, 
+                    bw = 0.01, normalize = function(x) x)
+
+### Calculate ecological parameters
+Diversity.fbasis <- Diversity(fbasis, d = 3, plot = FALSE, R = 999)
+#Evenness.fbasis <- Evenness(fbasis, d = 3, plot = FALSE)
+#Structural.organization.fbasis <- So(fbasis, d = 3, plot = FALSE)
+#Coef.var.fbasis <- CV(fbasis, d = 3, plot = FALSE)
+
+## Plot ecological parameters
+palphadiv <- ggplot(data = Diversity.fbasis, aes(x = as.character(metadata$Concentration), y = D2))+
+        geom_point(size = 4, alpha = 0.7)+
+        geom_line()+
+        facet_grid(metadata$Compound ~ ., scales = "free")+       # Creates different subplots
+        theme_bw()+
+        labs(y = "Phenotypic diversity (D2)", x = "Concentration", title = "Phenotypic diversity analysis")+
+        geom_errorbar(aes(ymin = D2-sd.D2, ymax = D2+sd.D2), width = 0.05)
+print(palphadiv)
