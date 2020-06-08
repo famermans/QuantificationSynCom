@@ -115,7 +115,7 @@ xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(19:22, 29, 30, 37, 55, 85)
 
 ### MM
 ## Gating out extra background based on SSC-BL1
-# Constructing gate
+# Constructing gate -> remark: gating was not optimized for this medium
 sqrcut3 <- matrix(c(5, 12, 14, 10, 5,
                     2, 5, 13.5, 13.5, 8.5), ncol = 2, nrow = 5)
 colnames(sqrcut3) <- c("BL1-A", "SSC-A")
@@ -129,8 +129,8 @@ xyplot(`SSC-A`~`BL1-A`, data = flowData_transformed[c(309, 315:318, 325:326, 333
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
 
 ## Gating cells based on BL1-BL3
-sqrcut4 <- matrix(c(6.7, 11, 14, 10, 6.7,
-                    2, 4.5, 13, 10.5, 5.3), ncol = 2, nrow = 5)
+sqrcut4 <- matrix(c(6.7, 13.3, 14.5, 10, 6.7,
+                    2, 5, 13.5, 10.5, 5.3), ncol = 2, nrow = 5)
 colnames(sqrcut4) <- c("BL1-A", "BL3-A")
 polyGate4 <- polygonGate(.gate = sqrcut4, filterId = "Cells MM")
 
@@ -143,17 +143,28 @@ xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(309, 315:318, 325:326, 333
 
 ### General gate for both media
 ## Gating cells based on BL1-BL3
-sqrcut5 <- matrix(c(5, 10, 14, 10, 5,
-                    2, 3, 4, 5, 6), ncol = 2, nrow = 5)
+sqrcut5 <- matrix(c(6.7, 13.3, 14.5, 10, 6.7,
+                    2, 5, 13.5, 10.5, 5.3), ncol = 2, nrow = 5)
 colnames(sqrcut5) <- c("BL1-A", "BL3-A")
 polyGate5 <- polygonGate(.gate = sqrcut5, filterId = "Cells")
 
 # Gating quality check
-xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(21:24)], filter = polyGate5,
+
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(19:22, 29, 30, 37, 55, 85, 309, 315:318, 325:326, 333, 345)], filter = polyGate5,
        scales = list(y = list(limits = c(0, 16)),
                      x = list(limits = c(0, 16))),
        axis = axis.default, nbin = 125, main = "Quality check gating cells", xlab = "BL1-A", ylab = "BL3-A",
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+# Gating quality check all samples
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(1:503)], filter = polyGate5,
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "Quality check gating cells", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+### Subsetting dataset
+flowData_transformed_gated <- Subset(flowData_transformed, polyGate5)
 
 
 #### Cell concentrations ----
@@ -195,6 +206,8 @@ Diversity.fbasis <- Diversity(fbasis, d = 3, plot = FALSE, R = 999)
 #Structural.organization.fbasis <- So(fbasis, d = 3, plot = FALSE)
 #Coef.var.fbasis <- CV(fbasis, d = 3, plot = FALSE)
 
+########################################## Check script from here
+
 ## Plot ecological parameters
 palphadiv <- ggplot(data = Diversity.fbasis, aes(x = as.character(metadata$Concentration), y = D2))+
         geom_point(size = 4, alpha = 0.7)+
@@ -204,3 +217,57 @@ palphadiv <- ggplot(data = Diversity.fbasis, aes(x = as.character(metadata$Conce
         labs(y = "Phenotypic diversity (D2)", x = "Concentration", title = "Phenotypic diversity analysis")+
         geom_errorbar(aes(ymin = D2-sd.D2, ymax = D2+sd.D2), width = 0.05)
 print(palphadiv)
+
+### Export ecological data to .csv file in the chosen directory
+#write.csv2(file="results.metrics.csv",
+#           cbind(Diversity.fbasis, Evenness.fbasis,
+#                 Structural.organization.fbasis,
+#                 Coef.var.fbasis))
+
+### Beta-diversity assessment of fingerprint
+beta.div <- beta_div_fcm(fbasis, ord.type="PCoA")
+
+# Plot ordination
+plot_beta_fcm(beta.div, color = metadata$State, shape = as.factor(metadata$Time), labels = list("State", "Timepoint")) + 
+        theme_bw() +
+        geom_point(size = 8, alpha = 0.5)
+
+#Prediction of relative abundances in the mixed cultures
+
+#### Random Forest
+# Build random forest for Fn, Pi, and So
+
+# Select the fcs files based on which the model will be trained
+fcs_names <- c("Fn_10_3_20191015_161647.fcs", "Pi_10_3_20191015_161828.fcs", "So_10_3_20191015_160057.fcs")
+
+# Sample info has to contain a column called 'name' which matches the sammplenames of the fcs files
+name <- list.files(path = Datapath, recursive = TRUE, pattern = ".fcs", full.names = FALSE)
+Sample_Info <- cbind(name, metadata)
+Sample_Info_sb <- Sample_Info %>% dplyr::filter(name %in% fcs_names)
+
+### Random forest model
+## Parameters of the model:
+## downsample: amount of cells that will be used in each sample in the calculations of the model
+## param: which parameters should be taken into account when constructing the model
+## plot_fig: whether a figure of the results should be constructed
+Model_RF <- Phenoflow::RandomF_FCS(flowData_transformed[fcs_names], Sample_Info_sb, target_label = "Strains", downsample = 10000, classification_type = "sample", param = param , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
+
+# Run Random Forest classifier to predict the Strain based on the single-cell FCM data
+#Choose the fcs files in which the model will be used/tested
+fcs_topre <- c("Fn_10_3_20191017_145607.fcs",
+               "So_Fn_10_3_20191015_162124.fcs",
+               "So_Fn_Pi_10_3_20191015_162306.fcs",
+               "So_Fn_Pi_Vp_10_3_20191015_162448.fcs",
+               "So_10_3_20191017_143923.fcs",
+               "Pi_10_3_20191017_145747.fcs",
+               "Vp_10_3_20191017_145142.fcs",
+               "1_10_3_20191016_141301.fcs",
+               "1_10_3_20191017_143044.fcs",
+               "2_10_3_20191016_141435.fcs",
+               "2_10_3_20191017_143159.fcs")
+flowData_topre <- flowData_transformed[fcs_topre]
+
+#### Ignore this comment: The model's performance highly decreased when trasformed data were used - to be discussed with Ruben --> which transformation? asin transformation, normalization, ...?
+# Arguments of RandomF_predict function?
+test_pred3 <- RandomF_predict(x = Model_RF[[1]], new_data =  flowData_topre, cleanFCS = FALSE)
+test_pred3
