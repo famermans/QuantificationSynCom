@@ -39,8 +39,9 @@ flowData_transformed <- transform(flowData,
                                   `SSC-A` = asinh(`SSC-A`),
                                   `BL1-A` = asinh(`BL1-A`),
                                   `BL3-A` = asinh(`BL3-A`),
-                                  `BL1-H` = asinh(`BL1-H`))
-param = c("FSC-A", "SSC-A", "BL1-A", "BL3-A", "BL1-H")
+                                  `BL1-H` = asinh(`BL1-H`),
+                                  `BL3-H` = asinh(`BL3-H`))
+param = c("FSC-A", "SSC-A", "BL1-A", "BL3-A", "BL1-H", "BL3-H")
 
 
 #### Extrating metadata from .fcs files ----
@@ -58,6 +59,12 @@ xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(1:296)],
        scales = list(y = list(limits = c(0, 16)),
                      x = list(limits = c(0, 16))),
        axis = axis.default, nbin = 125, main = "QC BHI2 (BL1-BL3)", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
+
+xyplot(`BL3-H`~`BL1-H`, data = flowData_transformed[c(123:162)],
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "QC BHI2 co-cultures 24h (BL1-BL3)", xlab = "BL1-H", ylab = "BL3-H",
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
 
 ## Singlets
