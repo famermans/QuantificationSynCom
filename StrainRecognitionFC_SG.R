@@ -157,7 +157,37 @@ polyGate5 <- polygonGate(.gate = sqrcut5, filterId = "Cells")
 
 # Gating quality check
 
-xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(19:22, 29, 30, 37, 55, 85, 309, 315:318, 325:326, 333, 345)], filter = polyGate5,
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(19, 21, 40, 41, 85, 86, 208, 291, 292, 301, 302, 337, 97, 189, 190, 201, 202, 207, 338, 345, 346, 349, 350, 403, 404, 432, 433)], filter = polyGate5,
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "Quality check gating cells", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(19, 21, 40, 41, 85, 86)], filter = polyGate5,
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "Quality check gating cells", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(208, 291, 292, 301, 302, 337)], filter = polyGate5,
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "Quality check gating cells", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(97, 189, 190, 201, 202, 207)], filter = polyGate5,
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "Quality check gating cells", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(338, 345, 346, 349, 350, 403)], filter = polyGate5,
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "Quality check gating cells", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(404, 432, 433)], filter = polyGate5,
        scales = list(y = list(limits = c(0, 16)),
                      x = list(limits = c(0, 16))),
        axis = axis.default, nbin = 125, main = "Quality check gating cells", xlab = "BL1-A", ylab = "BL3-A",
