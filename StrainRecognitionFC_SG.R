@@ -110,10 +110,10 @@ xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(697:729)],
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
 
 ## Singlets
-xyplot(`BL1-H`~`BL1-A`, data = flowData_transformed[c(1:296)],
+xyplot(`BL1-H`~`BL1-A`, data = flowData_transformed[c(1:729)],
        scales = list(y = list(limits = c(0, 16)),
                      x = list(limits = c(0,16))),
-       axix = axis.default, nbin = 125, main = "QC singlets BHI2 (BL1-A ~ BL1-H)", xlab = "BL1-A", ylab = "BL1-H",
+       axix = axis.default, nbin = 125, main = "QC singlets (BL1-A ~ BL1-H)", xlab = "BL1-A", ylab = "BL1-H",
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
 
 ### MM
