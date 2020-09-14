@@ -67,6 +67,48 @@ xyplot(`BL3-H`~`BL1-H`, data = flowData_transformed[c(123:162)],
        axis = axis.default, nbin = 125, main = "QC BHI2 co-cultures 24h (BL1-BL3)", xlab = "BL1-H", ylab = "BL3-H",
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
 
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(504:537)],
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "QC BHI2 16-06-2020 (BL1-BL3)", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
+
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(538:573)],
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "QC MM 16-06-2020 (BL1-BL3)", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
+
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(574:613)],
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "QC BHI2 Co-cultures 17-06-2020 (BL1-BL3)", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
+
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(614:655)],
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "QC MM Co-cultures 17-06-2020 (BL1-BL3)", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
+
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(656:675)],
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "QC BHI2 Co-cultures 18-06-2020 (BL1-BL3)", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
+
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(676:696)],
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "QC MM Co-cultures 18-06-2020 (BL1-BL3)", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
+
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(697:729)],
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "QC MM 18-06-2020 (BL1-BL3)", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
+
 ## Singlets
 xyplot(`BL1-H`~`BL1-A`, data = flowData_transformed[c(1:296)],
        scales = list(y = list(limits = c(0, 16)),
