@@ -53,18 +53,54 @@ colnames(metadata) <- c("Date", "Experimenter", "ExperimentID", "Medium", "Timep
 
 
 #### Quality control data ----
-### BHI2
-## Contamination 
-xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(1:296)],
+
+## Contamination
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(1:90)],
        scales = list(y = list(limits = c(0, 16)),
                      x = list(limits = c(0, 16))),
-       axis = axis.default, nbin = 125, main = "QC BHI2 (BL1-BL3)", xlab = "BL1-A", ylab = "BL3-A",
+       axis = axis.default, nbin = 125, main = "QC BHI2 12-05-2020 (BL1-BL3)", xlab = "BL1-A", ylab = "BL3-A",
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
 
-xyplot(`BL3-H`~`BL1-H`, data = flowData_transformed[c(123:162)],
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(91:122)],
        scales = list(y = list(limits = c(0, 16)),
                      x = list(limits = c(0, 16))),
-       axis = axis.default, nbin = 125, main = "QC BHI2 co-cultures 24h (BL1-BL3)", xlab = "BL1-H", ylab = "BL3-H",
+       axis = axis.default, nbin = 125, main = "QC BHI2 Mixes 12-05-2020 (BL1-BL3)", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
+
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(123:164)],
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "QC BHI2 Co-cultures 13-05-2020 (BL1-BL3)", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
+
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(165:206)],
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "QC BHI2 Co-cultures 14-05-2020 (BL1-BL3)", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
+
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(207:296)],
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "QC BHI2 14-05-2020 (BL1-BL3)", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
+
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(297:386)],
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "QC MM 25-05-2020 (BL1-BL3)", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
+
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(387:413)],
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "QC MM Mixes 25-05-2020 (BL1-BL3)", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
+
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(414:503)],
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "QC MM 27-05-2020 (BL1-BL3)", xlab = "BL1-A", ylab = "BL3-A",
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
 
 xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(504:537)],
@@ -110,25 +146,10 @@ xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(697:729)],
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
 
 ## Singlets
-xyplot(`BL1-H`~`BL1-A`, data = flowData_transformed[c(1:729)],
+p_singlets <- xyplot(`BL1-H`~`BL1-A`, data = flowData_transformed[c(1:729)],
        scales = list(y = list(limits = c(0, 16)),
                      x = list(limits = c(0,16))),
        axix = axis.default, nbin = 125, main = "QC singlets (BL1-A ~ BL1-H)", xlab = "BL1-A", ylab = "BL1-H",
-       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
-
-### MM
-## Contamination
-xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(297:503)],
-       scales = list(y = list(limits = c(0, 16)),
-                     x = list(limits = c(0, 16))),
-       axis = axis.default, nbin = 125, main = "QC MM (BL1-BL3)", xlab = "BL1-A", ylab = "BL3-A",
-       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
-
-## Singlets
-xyplot(`BL1-H`~`BL1-A`, data = flowData_transformed[c(297:503)],
-       scales = list(y = list(limits = c(0, 16)),
-                     x = list(limits = c(0,16))),
-       axix = axis.default, nbin = 125, main = "QC singlets MM (BL1-A ~ BL1-H)", xlab = "BL1-A", ylab = "BL1-H",
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
 
 
