@@ -20,6 +20,7 @@ library("RColorBrewer")
 library("cowplot")
 library("reshape2")
 library("dplyr")
+library("tidyverse")
 
 set.seed(777)
 
@@ -153,22 +154,27 @@ p_singlets <- xyplot(`BL1-H`~`BL1-A`, data = flowData_transformed[c(1:729)],
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
 
 
+#### Select data ----
+flowData_transformed_sel <- flowData_transformed[c(1:122, 297:413, 656:696)]
+metadata_sel <- metadata[c(1:122, 297:413, 656:696), ]
+
 #### Gating ----
 
 ### BHI2
 ## Gating out extra background based on SSC-BL1
+## Since the difference between control and filtered sample is not very encouraging, reducing BG through SSC-BL1 will be skipped
 # Constructing gate
-sqrcut1 <- matrix(c(5, 12, 14, 10, 5,
-                    2, 5, 13.5, 13.5, 8.5), ncol = 2, nrow = 5)
-colnames(sqrcut1) <- c("BL1-A", "SSC-A")
-polyGate1 <- polygonGate(.gate = sqrcut1, filterId = "Reduced background BL1-SSC BHI2")
-
-# Gating quality check
-xyplot(`SSC-A`~`BL1-A`, data = flowData_transformed[c(19:22, 29, 30, 37, 55, 85)], filter = polyGate1,
-       scales = list(y = list(limits = c(0, 16)),
-                     x = list(limits = c(0, 16))),
-       axis = axis.default, nbin = 125, main = "Quality check gating BL1-SSC BHI2", xlab = "BL1-A", ylab = "SSC-A",
-       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+# sqrcut1 <- matrix(c(5, 12, 14, 10, 5,
+#                     2, 5, 13.5, 13.5, 8.5), ncol = 2, nrow = 5)
+# colnames(sqrcut1) <- c("BL1-A", "SSC-A")
+# polyGate1 <- polygonGate(.gate = sqrcut1, filterId = "Reduced background BL1-SSC BHI2")
+# 
+# # Gating quality check
+# xyplot(`SSC-A`~`BL1-A`, data = flowData_transformed_sel[c(1, 7, 13, 19, 21, 23, 29, 31, 37, 43, 49, 55, 61, 67, 73, 79, 85)], filter = polyGate1,
+#        scales = list(y = list(limits = c(0, 16)),
+#                      x = list(limits = c(0, 16))),
+#        axis = axis.default, nbin = 125, main = "Quality check gating BL1-SSC BHI2", xlab = "BL1-A", ylab = "SSC-A",
+#        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
 
 ## Gating cells based on BL1-BL3
 sqrcut2 <- matrix(c(6.7, 11, 14, 10, 6.7,
@@ -176,40 +182,86 @@ sqrcut2 <- matrix(c(6.7, 11, 14, 10, 6.7,
 colnames(sqrcut2) <- c("BL1-A", "BL3-A")
 polyGate2 <- polygonGate(.gate = sqrcut2, filterId = "Cells BHI2")
 
-# Gating quality check
-xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(19:22, 29, 30, 37, 55, 85)], filter = polyGate2,
+# Gating quality check pure cultures
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(1, 7, 13, 19, 21, 23, 29, 31, 37, 43, 49, 55, 61, 67, 73, 79, 85)], filter = polyGate2,
        scales = list(y = list(limits = c(0, 16)),
                      x = list(limits = c(0, 16))),
        axis = axis.default, nbin = 125, main = "Quality check gating cells BHI2", xlab = "BL1-A", ylab = "BL3-A",
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
 
-### MM
-## Gating out extra background based on SSC-BL1
-# Constructing gate -> remark: gating was not optimized for this medium
-sqrcut3 <- matrix(c(5, 12, 14, 10, 5,
-                    2, 5, 13.5, 13.5, 8.5), ncol = 2, nrow = 5)
-colnames(sqrcut3) <- c("BL1-A", "SSC-A")
-polyGate3 <- polygonGate(.gate = sqrcut3, filterId = "Reduced background BL1-SSC MM")
-
-# Gating quality check
-xyplot(`SSC-A`~`BL1-A`, data = flowData_transformed[c(309, 315:318, 325:326, 333, 345)], filter = polyGate3,
+# Gating quality check mixes
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(91, 93, 95, 97, 99, 101, 103, 105, 107, 109, 111, 113, 115, 117, 119)], filter = polyGate2,
        scales = list(y = list(limits = c(0, 16)),
                      x = list(limits = c(0, 16))),
-       axis = axis.default, nbin = 125, main = "Quality check gating BL1-SSC MM", xlab = "BL1-A", ylab = "SSC-A",
+       axis = axis.default, nbin = 125, main = "Quality check gating cells BHI2 mixes", xlab = "BL1-A", ylab = "BL3-A",
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
 
+# Gating quality check co-cultures
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(656, 659, 662, 665, 668, 671, 674, 675)], filter = polyGate2,
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "Quality check gating cells BHI2 co-cultures", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+### MM
+## Gating out extra background based on SSC-BL1
+## Since reducing BG for BHI2 through SSC-BL1 was not performed, this will also not be done for MM
+# # Constructing gate
+# sqrcut3 <- matrix(c(5.5, 13, 15, 11.2, 5.5,
+#                     2, 5, 14.5, 14.5, 9.6), ncol = 2, nrow = 5)
+# colnames(sqrcut3) <- c("BL1-A", "SSC-A")
+# polyGate3 <- polygonGate(.gate = sqrcut3, filterId = "Reduced background BL1-SSC MM")
+# 
+# # Gating quality check
+# xyplot(`SSC-A`~`BL1-A`, data = flowData_transformed[c(297, 303, 309, 315, 317, 319, 325, 327, 333, 339, 345, 351, 357, 363, 369, 375, 381)], filter = polyGate3,
+#        scales = list(y = list(limits = c(0, 16)),
+#                      x = list(limits = c(4, 16))),
+#        axis = axis.default, nbin = 125, main = "Quality check gating BL1-SSC MM", xlab = "BL1-A", ylab = "SSC-A",
+#        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
 ## Gating cells based on BL1-BL3
-sqrcut4 <- matrix(c(6.7, 13.3, 14.5, 10, 6.7,
+sqrcut4 <- matrix(c(7, 13.5, 14.8, 10, 7,
                     2, 5, 13.5, 10.5, 5.3), ncol = 2, nrow = 5)
 colnames(sqrcut4) <- c("BL1-A", "BL3-A")
 polyGate4 <- polygonGate(.gate = sqrcut4, filterId = "Cells MM")
 
 # Gating quality check
-xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(309, 315:318, 325:326, 333, 345)], filter = polyGate4,
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(297, 303, 309, 315, 317, 319, 325, 327, 333, 339, 345, 351, 357, 363, 369, 375, 381, 413)], filter = polyGate4,
        scales = list(y = list(limits = c(0, 16)),
                      x = list(limits = c(0, 16))),
        axis = axis.default, nbin = 125, main = "Quality check gating cells MM", xlab = "BL1-A", ylab = "BL3-A",
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+# Gating quality check mixes
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(387, 389, 391, 393, 395, 397, 399, 401, 403, 405, 407, 409, 411)], filter = polyGate4,
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "Quality check gating cells MM mixes", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+# Gating quality check co-cultures
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(678, 680, 683, 686, 689, 692, 695, 696)], filter = polyGate4,
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "Quality check gating cells MM co-cultures", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+# Check extra population for So
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(357:362)], filter = polyGate4,
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "Quality check gating cells MM So", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+# Sample A has an extra population --> leave it out for further analysis
+
+# Check BG for Pi
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(333:338)], filter = polyGate4,
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "Quality check gating cells MM Pi", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+# Sample A looks a bit off, additionally, the duplicate measurement for sample A is off --> leave it out for further analysis
+# Sample B also has a big difference between replicatre measurements, but better compared to sample A --> leave B out
 
 ### General gate for both media
 ## Gating cells based on BL1-BL3
@@ -218,46 +270,51 @@ sqrcut5 <- matrix(c(6.7, 13.3, 14.5, 10, 6.7,
 colnames(sqrcut5) <- c("BL1-A", "BL3-A")
 polyGate5 <- polygonGate(.gate = sqrcut5, filterId = "Cells")
 
-# Gating quality check
-
-xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(19, 21, 40, 41, 85, 86, 208, 291, 292, 301, 302, 337, 97, 189, 190, 201, 202, 207, 338, 345, 346, 349, 350, 403, 404, 432, 433)], filter = polyGate5,
+# Gating quality check pure cultures BHI2
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(1, 7, 13, 19, 21, 23, 29, 31, 37, 43, 49, 55, 61, 67, 73, 79, 85)], filter = polyGate2,
        scales = list(y = list(limits = c(0, 16)),
                      x = list(limits = c(0, 16))),
-       axis = axis.default, nbin = 125, main = "Quality check gating cells", xlab = "BL1-A", ylab = "BL3-A",
+       axis = axis.default, nbin = 125, main = "Quality check gating cells BHI2", xlab = "BL1-A", ylab = "BL3-A",
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
 
-xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(19, 21, 40, 41, 85, 86)], filter = polyGate5,
+# Gating quality check mixes BHI2
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(91, 93, 95, 97, 99, 101, 103, 105, 107, 109, 111, 113, 115, 117, 119)], filter = polyGate2,
        scales = list(y = list(limits = c(0, 16)),
                      x = list(limits = c(0, 16))),
-       axis = axis.default, nbin = 125, main = "Quality check gating cells", xlab = "BL1-A", ylab = "BL3-A",
+       axis = axis.default, nbin = 125, main = "Quality check gating cells BHI2 mixes", xlab = "BL1-A", ylab = "BL3-A",
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
 
-xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(208, 291, 292, 301, 302, 337)], filter = polyGate5,
+# Gating quality check co-cultures BHI2
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(656, 659, 662, 665, 668, 671, 674, 675)], filter = polyGate2,
        scales = list(y = list(limits = c(0, 16)),
                      x = list(limits = c(0, 16))),
-       axis = axis.default, nbin = 125, main = "Quality check gating cells", xlab = "BL1-A", ylab = "BL3-A",
+       axis = axis.default, nbin = 125, main = "Quality check gating cells BHI2 co-cultures", xlab = "BL1-A", ylab = "BL3-A",
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
 
-xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(97, 189, 190, 201, 202, 207)], filter = polyGate5,
+# Gating quality check MM
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(297, 303, 309, 315, 317, 319, 325, 327, 333, 339, 345, 351, 357, 363, 369, 375, 381, 413)], filter = polyGate4,
        scales = list(y = list(limits = c(0, 16)),
                      x = list(limits = c(0, 16))),
-       axis = axis.default, nbin = 125, main = "Quality check gating cells", xlab = "BL1-A", ylab = "BL3-A",
+       axis = axis.default, nbin = 125, main = "Quality check gating cells MM", xlab = "BL1-A", ylab = "BL3-A",
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
 
-xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(338, 345, 346, 349, 350, 403)], filter = polyGate5,
+# Gating quality check mixes MM
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(387, 389, 391, 393, 395, 397, 399, 401, 403, 405, 407, 409, 411)], filter = polyGate4,
        scales = list(y = list(limits = c(0, 16)),
                      x = list(limits = c(0, 16))),
-       axis = axis.default, nbin = 125, main = "Quality check gating cells", xlab = "BL1-A", ylab = "BL3-A",
+       axis = axis.default, nbin = 125, main = "Quality check gating cells MM mixes", xlab = "BL1-A", ylab = "BL3-A",
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
 
-xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(404, 432, 433)], filter = polyGate5,
+# Gating quality check co-cultures MM
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(678, 680, 683, 686, 689, 692, 695, 696)], filter = polyGate4,
        scales = list(y = list(limits = c(0, 16)),
                      x = list(limits = c(0, 16))),
-       axis = axis.default, nbin = 125, main = "Quality check gating cells", xlab = "BL1-A", ylab = "BL3-A",
+       axis = axis.default, nbin = 125, main = "Quality check gating cells MM co-cultures", xlab = "BL1-A", ylab = "BL3-A",
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
 
-# Gating quality check all samples
-xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(1:503)], filter = polyGate5,
+
+## Gating quality check all samples
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed_sel, filter = polyGate5,
        scales = list(y = list(limits = c(0, 16)),
                      x = list(limits = c(0, 16))),
        axis = axis.default, nbin = 125, main = "Quality check gating cells", xlab = "BL1-A", ylab = "BL3-A",
