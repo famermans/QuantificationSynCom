@@ -52,6 +52,7 @@ sampleNames(flowData_transformed) <- substring(sampleNames(flowData_transformed)
 metadata <- data.frame(do.call(rbind, lapply(strsplit(flowCore::sampleNames(flowData_transformed), "_"), rbind)))
 colnames(metadata) <- c("Date", "Experimenter", "ExperimentID", "Medium", "Timepoint", "Strain", "Replicate", "Dilution", "Stain", "Well")
 
+metadata$Dilution <- as.numeric(metadata$Dilution)
 
 #### Quality control data ----
 
@@ -335,10 +336,10 @@ TotalCount <- summary(cells); TotalCount <- toTable(TotalCount)
 vol <- as.numeric(flowCore::fsApply(flowData_transformed, FUN = function(x) x@description$`$VOL`))/1000
 
 ### Concentrations
-# Calculating concentrations --> since we diluted 1000 times, concentrations will be in cells/µL
+# Calculating concentrations --> Concentrations will be in cells/µL
 cell_concentrations <- data.frame(Samples = flowCore::sampleNames(flowData_transformed),
                                   Strain = metadata$Strain,
-                                  Concentration = (TotalCount$true*1000)/vol)
+                                  Concentration = (TotalCount$true*metadata$Dilution)/vol)
 
 
 #### Phenotypic diversity analysis ----
