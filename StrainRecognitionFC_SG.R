@@ -366,6 +366,7 @@ Diversity.fbasis <- Diversity(fbasis, d = 3, plot = FALSE, R = 999)
 
 ########################################## Check script from here
 
+######## Script for plot is not updated yet
 ## Plot ecological parameters
 palphadiv <- ggplot(data = Diversity.fbasis, aes(x = as.character(metadata$Concentration), y = D2))+
         geom_point(size = 4, alpha = 0.7)+
@@ -385,6 +386,7 @@ print(palphadiv)
 ### Beta-diversity assessment of fingerprint
 beta.div <- beta_div_fcm(fbasis, ord.type="PCoA")
 
+######## Script for plot is not updated yet
 # Plot ordination
 plot_beta_fcm(beta.div, color = metadata$State, shape = as.factor(metadata$Time), labels = list("State", "Timepoint")) + 
         theme_bw() +
@@ -392,7 +394,7 @@ plot_beta_fcm(beta.div, color = metadata$State, shape = as.factor(metadata$Time)
 
 #Prediction of relative abundances in the mixed cultures
 
-#### Random Forest
+#### Random Forest ----
 # Build random forest for Fn, Pi, and So
 
 # Select the fcs files based on which the model will be trained
