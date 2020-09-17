@@ -46,13 +46,16 @@ param = c("FSC-A", "SSC-A", "BL1-A", "BL3-A", "BL1-H", "BL3-H")
 
 
 #### Extrating metadata from .fcs files ----
-sampleNames(flowData_transformed) <- substring(sampleNames(flowData_transformed), 0, nchar(sampleNames(flowData_transformed))-4)       # nchar takes a character vector and returns the number of characters in the vector
+#sampleNames(flowData_transformed) <- substring(sampleNames(flowData_transformed), 0, nchar(sampleNames(flowData_transformed))-4)       # nchar takes a character vector and returns the number of characters in the vector
 
 # Extracting the actual metadata
 metadata <- data.frame(do.call(rbind, lapply(strsplit(flowCore::sampleNames(flowData_transformed), "_"), rbind)))
 colnames(metadata) <- c("Date", "Experimenter", "ExperimentID", "Medium", "Timepoint", "Strain", "Replicate", "Dilution", "Stain", "Well")
 
 metadata$Dilution <- as.numeric(metadata$Dilution)
+
+name <- list.files(path = Datapath, recursive = TRUE, pattern = ".fcs", full.names = FALSE)
+Sample_Info <- cbind(name, metadata)
 
 #### Quality control data ----
 
@@ -272,42 +275,42 @@ colnames(sqrcut5) <- c("BL1-A", "BL3-A")
 polyGate5 <- polygonGate(.gate = sqrcut5, filterId = "Cells")
 
 # Gating quality check pure cultures BHI2
-xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(1, 7, 13, 19, 21, 23, 29, 31, 37, 43, 49, 55, 61, 67, 73, 79, 85)], filter = polyGate2,
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(1, 7, 13, 19, 21, 23, 29, 31, 37, 43, 49, 55, 61, 67, 73, 79, 85)], filter = polyGate5,
        scales = list(y = list(limits = c(0, 16)),
                      x = list(limits = c(0, 16))),
        axis = axis.default, nbin = 125, main = "Quality check gating cells BHI2", xlab = "BL1-A", ylab = "BL3-A",
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
 
 # Gating quality check mixes BHI2
-xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(91, 93, 95, 97, 99, 101, 103, 105, 107, 109, 111, 113, 115, 117, 119)], filter = polyGate2,
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(91, 93, 95, 97, 99, 101, 103, 105, 107, 109, 111, 113, 115, 117, 119)], filter = polyGate5,
        scales = list(y = list(limits = c(0, 16)),
                      x = list(limits = c(0, 16))),
        axis = axis.default, nbin = 125, main = "Quality check gating cells BHI2 mixes", xlab = "BL1-A", ylab = "BL3-A",
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
 
 # Gating quality check co-cultures BHI2
-xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(656, 659, 662, 665, 668, 671, 674, 675)], filter = polyGate2,
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(656, 659, 662, 665, 668, 671, 674, 675)], filter = polyGate5,
        scales = list(y = list(limits = c(0, 16)),
                      x = list(limits = c(0, 16))),
        axis = axis.default, nbin = 125, main = "Quality check gating cells BHI2 co-cultures", xlab = "BL1-A", ylab = "BL3-A",
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
 
 # Gating quality check MM
-xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(297, 303, 309, 315, 317, 319, 325, 327, 333, 339, 345, 351, 357, 363, 369, 375, 381, 413)], filter = polyGate4,
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(297, 303, 309, 315, 317, 319, 325, 327, 333, 339, 345, 351, 357, 363, 369, 375, 381, 413)], filter = polyGate5,
        scales = list(y = list(limits = c(0, 16)),
                      x = list(limits = c(0, 16))),
        axis = axis.default, nbin = 125, main = "Quality check gating cells MM", xlab = "BL1-A", ylab = "BL3-A",
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
 
 # Gating quality check mixes MM
-xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(387, 389, 391, 393, 395, 397, 399, 401, 403, 405, 407, 409, 411)], filter = polyGate4,
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(387, 389, 391, 393, 395, 397, 399, 401, 403, 405, 407, 409, 411)], filter = polyGate5,
        scales = list(y = list(limits = c(0, 16)),
                      x = list(limits = c(0, 16))),
        axis = axis.default, nbin = 125, main = "Quality check gating cells MM mixes", xlab = "BL1-A", ylab = "BL3-A",
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
 
 # Gating quality check co-cultures MM
-xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(678, 680, 683, 686, 689, 692, 695, 696)], filter = polyGate4,
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(678, 680, 683, 686, 689, 692, 695, 696)], filter = polyGate5,
        scales = list(y = list(limits = c(0, 16)),
                      x = list(limits = c(0, 16))),
        axis = axis.default, nbin = 125, main = "Quality check gating cells MM co-cultures", xlab = "BL1-A", ylab = "BL3-A",
@@ -364,8 +367,6 @@ Diversity.fbasis <- Diversity(fbasis, d = 3, plot = FALSE, R = 999)
 #Structural.organization.fbasis <- So(fbasis, d = 3, plot = FALSE)
 #Coef.var.fbasis <- CV(fbasis, d = 3, plot = FALSE)
 
-########################################## Check script from here
-
 ######## Script for plot is not updated yet
 ## Plot ecological parameters
 palphadiv <- ggplot(data = Diversity.fbasis, aes(x = as.character(metadata$Concentration), y = D2))+
@@ -392,17 +393,34 @@ plot_beta_fcm(beta.div, color = metadata$State, shape = as.factor(metadata$Time)
         theme_bw() +
         geom_point(size = 8, alpha = 0.5)
 
-#Prediction of relative abundances in the mixed cultures
+#### Training Random Forest classifier ----
 
-#### Random Forest ----
-# Build random forest for Fn, Pi, and So
+# Sample selection
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(23:28, 319:324)], filter = polyGate5,
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "Quality check Fn", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
 
-# Select the fcs files based on which the model will be trained
-fcs_names <- c("Fn_10_3_20191015_161647.fcs", "Pi_10_3_20191015_161828.fcs", "So_10_3_20191015_160057.fcs")
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(61:66, 357:362)], filter = polyGate5,
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "Quality check So", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(31:36, 327:332)], filter = polyGate5,
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "Quality check Pg", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+## Train algorithm for So, Fn, Pg in BHI2
+# Select the fcs files based on which the model will be trained --> Fn (replicate C), So (replicate A), Pg (replicate B)
+fcs_names <- c("20200512_Fabian_14strainID_BHI2_24h_Fn_C_1000_SG_B5.fcs",
+               "20200512_Fabian_14strainID_BHI2_24h_Pg_B_1000_SG_E10.fcs",
+               "20200512_Fabian_14strainID_BHI2_24h_So_A_1000_SG_D1.fcs")
 
 # Sample info has to contain a column called 'name' which matches the sammplenames of the fcs files
-name <- list.files(path = Datapath, recursive = TRUE, pattern = ".fcs", full.names = FALSE)
-Sample_Info <- cbind(name, metadata)
 Sample_Info_sb <- Sample_Info %>% dplyr::filter(name %in% fcs_names)
 
 ### Random forest model
@@ -410,24 +428,48 @@ Sample_Info_sb <- Sample_Info %>% dplyr::filter(name %in% fcs_names)
 ## downsample: amount of cells that will be used in each sample in the calculations of the model
 ## param: which parameters should be taken into account when constructing the model
 ## plot_fig: whether a figure of the results should be constructed
-Model_RF <- Phenoflow::RandomF_FCS(flowData_transformed[fcs_names], Sample_Info_sb, target_label = "Strains", downsample = 10000, classification_type = "sample", param = param , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
+
+
+#Model_RF <- Phenoflow::RandomF_FCS(flowData_transformed_2[fcs_names], Sample_Info_sb, target_label = "Strain", downsample = 1000, classification_type = "sample", param = param , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
+paramRF = c("FSC-A", "SSC-A", "BL1-A", "BL3-A", "FSC-H", "SSC-H", "BL1-H", "BL3-H")
+
+Model_RF <- RandomF_FCS_tmp(flowData_transformed_2[fcs_names], Sample_Info_sb, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
+
+Model_RF_NotNormalized <- RandomF_FCS_tmp(flowData_transformed[fcs_names], Sample_Info_sb, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
+
+
+fcs_names_pi <- c("20200512_Fabian_14strainID_BHI2_24h_Fn_C_1000_SG_B5.fcs", "20200512_Fabian_14strainID_BHI2_24h_Pi_A_1000_SG_A1.fcs", "20200512_Fabian_14strainID_BHI2_24h_So_A_1000_SG_D1.fcs")
+Sample_Info_sb_pi <- Sample_Info %>% dplyr::filter(name %in% fcs_names_pi)
+
+Model_RF_NotNormalized_Pi <- RandomF_FCS_tmp(flowData_transformed[fcs_names_pi], Sample_Info_sb_pi, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
+Model_RF_Pi <- RandomF_FCS_tmp(flowData_transformed_2[fcs_names_pi], Sample_Info_sb_pi, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
 
 # Run Random Forest classifier to predict the Strain based on the single-cell FCM data
 #Choose the fcs files in which the model will be used/tested
-fcs_topre <- c("Fn_10_3_20191017_145607.fcs",
-               "So_Fn_10_3_20191015_162124.fcs",
-               "So_Fn_Pi_10_3_20191015_162306.fcs",
-               "So_Fn_Pi_Vp_10_3_20191015_162448.fcs",
-               "So_10_3_20191017_143923.fcs",
-               "Pi_10_3_20191017_145747.fcs",
-               "Vp_10_3_20191017_145142.fcs",
-               "1_10_3_20191016_141301.fcs",
-               "1_10_3_20191017_143044.fcs",
-               "2_10_3_20191016_141435.fcs",
-               "2_10_3_20191017_143159.fcs")
-flowData_topre <- flowData_transformed[fcs_topre]
+fcs_topre <- c("20200617_Fabian_14strainID_MM_24h_Co2_A_100_SG_A7.fcs",
+               "20200617_Fabian_14strainID_MM_24h_Co2_B_100_SG_C7.fcs",
+               "20200617_Fabian_14strainID_BHI2_24h_Co2_A_1000_SG_A2.fcs",
+               "20200618_Fabian_14strainID_MM_48h_Co2_A_100_SG_A8.fcs",
+               "20200617_Fabian_14strainID_BHI2_24h_Co2_B_1000_SG_C2.fcs",
+               "20200618_Fabian_14strainID_MM_48h_Co2_B_100_SG_C7.fcs",
+               "20200617_Fabian_14strainID_BHI2_24h_Co2_C_1000_SG_G1.fcs",
+               "20200618_Fabian_14strainID_BHI2_48h_Co2_A_1000_SG_A2.fcs",
+               "20200618_Fabian_14strainID_MM_48h_Co2_B_100_SG_C7.fcs",
+               "20200618_Fabian_14strainID_BHI2_48h_Co2_B_1000_SG_B2.fcs",
+               "20200618_Fabian_14strainID_BHI2_48h_Co2_C_1000_SG_D1.fcs",
+               "20200617_Fabian_14strainID_MM_24h_Co1_B_100_SG_C6.fcs",
+               "20200617_Fabian_14strainID_MM_24h_Co1_C_100_SG_E6.fcs",
+               "20200618_Fabian_14strainID_BHI2_48h_Co1_A_1000_SG_A1.fcs",
+               "20200618_Fabian_14strainID_BHI2_48h_Co1_B_1000_SG_B1.fcs",
+               "20200617_Fabian_14strainID_BHI2_24h_Co1_A_1000_SG_A1.fcs",
+               "20200617_Fabian_14strainID_BHI2_24h_Co1_B_1000_SG_C1.fcs",
+               "20200617_Fabian_14strainID_BHI2_24h_Co1_C_1000_SG_E1.fcs",
+               "20200618_Fabian_14strainID_BHI2_48h_Co1_C_1000_SG_C1.fcs",
+               "20200618_Fabian_14strainID_MM_48h_Co1_B_100_SG_A7.fcs",
+               "20200618_Fabian_14strainID_MM_48h_Co1_C_100_SG_B7.fcs")
 
-#### Ignore this comment: The model's performance highly decreased when trasformed data were used - to be discussed with Ruben --> which transformation? asin transformation, normalization, ...?
-# Arguments of RandomF_predict function?
-test_pred3 <- RandomF_predict(x = Model_RF[[1]], new_data =  flowData_topre, cleanFCS = FALSE)
-test_pred3
+flowData_topre <- flowData_transformed_2[fcs_topre]
+
+
+test_pred <- RandomF_predict(x = Model_RF[[1]], new_data =  flowData_topre, cleanFCS = FALSE)
+test_pred
