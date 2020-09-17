@@ -40,9 +40,11 @@ flowData_transformed <- transform(flowData,
                                   `SSC-A` = asinh(`SSC-A`),
                                   `BL1-A` = asinh(`BL1-A`),
                                   `BL3-A` = asinh(`BL3-A`),
+                                  `FSC-H` = asinh(`FSC-H`),
+                                  `SSC-H` = asinh(`SSC-H`),
                                   `BL1-H` = asinh(`BL1-H`),
                                   `BL3-H` = asinh(`BL3-H`))
-param = c("FSC-A", "SSC-A", "BL1-A", "BL3-A", "BL1-H", "BL3-H")
+param = c("FSC-A", "SSC-A", "BL1-A", "BL3-A", "FSC-H", "SSC-H", "BL1-H", "BL3-H")
 
 
 #### Extrating metadata from .fcs files ----
@@ -350,12 +352,18 @@ cell_concentrations <- data.frame(Samples = flowCore::sampleNames(flowData_trans
 ### Normalization of data
 summary <- fsApply(x = flowData_transformed_gated, FUN = function(x) apply(x, 2, max), use.exprs = TRUE)
 max = max(summary[, "BL1-A"])
+max2 = max(summary[, "BL1-H"])
 mytrans <- function(x) x/max
+mytrans2 <- function(x) x/max2
 flowData_transformed_2 <- transform(flowData_transformed_gated,
                                     `FSC-A` = mytrans(`FSC-A`), 
                                     `SSC-A` = mytrans(`SSC-A`), 
                                     `BL1-A` = mytrans(`BL1-A`), 
-                                    `BL3-A` = mytrans(`BL3-A`))
+                                    `BL3-A` = mytrans(`BL3-A`),
+                                    `FSC-H` = mytrans2(`FSC-H`), 
+                                    `SSC-H` = mytrans2(`SSC-H`), 
+                                    `BL1-H` = mytrans2(`BL1-H`), 
+                                    `BL3-H` = mytrans2(`BL3-H`))
 
 ### Calculating fingerprint with bw = 0.01
 fbasis <- flowBasis(flowData_transformed_2, param, nbin = 128, 
@@ -414,7 +422,10 @@ xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(31:36, 327:332)], filter =
        axis = axis.default, nbin = 125, main = "Quality check Pg", xlab = "BL1-A", ylab = "BL3-A",
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
 
-## Train algorithm for So, Fn, Pg in BHI2
+# Define parameters on which RF will build its model
+paramRF = c("FSC-A", "SSC-A", "BL1-A", "BL3-A", "FSC-H", "SSC-H", "BL1-H", "BL3-H")
+
+## Model for So, Fn and Pg in BHI2
 # Select the fcs files based on which the model will be trained --> Fn (replicate C), So (replicate A), Pg (replicate B)
 fcs_names <- c("20200512_Fabian_14strainID_BHI2_24h_Fn_C_1000_SG_B5.fcs",
                "20200512_Fabian_14strainID_BHI2_24h_Pg_B_1000_SG_E10.fcs",
@@ -423,29 +434,25 @@ fcs_names <- c("20200512_Fabian_14strainID_BHI2_24h_Fn_C_1000_SG_B5.fcs",
 # Sample info has to contain a column called 'name' which matches the sammplenames of the fcs files
 Sample_Info_sb <- Sample_Info %>% dplyr::filter(name %in% fcs_names)
 
-### Random forest model
-## Parameters of the model:
-## downsample: amount of cells that will be used in each sample in the calculations of the model
-## param: which parameters should be taken into account when constructing the model
-## plot_fig: whether a figure of the results should be constructed
+#Model_RF <- Phenoflow::RandomF_FCS(flowData_transformed_2[fcs_names], Sample_Info_sb, target_label = "Strain", downsample = 1000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
 
-
-#Model_RF <- Phenoflow::RandomF_FCS(flowData_transformed_2[fcs_names], Sample_Info_sb, target_label = "Strain", downsample = 1000, classification_type = "sample", param = param , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
-paramRF = c("FSC-A", "SSC-A", "BL1-A", "BL3-A", "FSC-H", "SSC-H", "BL1-H", "BL3-H")
-
+# Using Jasmine's function
 Model_RF <- RandomF_FCS_tmp(flowData_transformed_2[fcs_names], Sample_Info_sb, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
-
 Model_RF_NotNormalized <- RandomF_FCS_tmp(flowData_transformed[fcs_names], Sample_Info_sb, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
 
 
-fcs_names_pi <- c("20200512_Fabian_14strainID_BHI2_24h_Fn_C_1000_SG_B5.fcs", "20200512_Fabian_14strainID_BHI2_24h_Pi_A_1000_SG_A1.fcs", "20200512_Fabian_14strainID_BHI2_24h_So_A_1000_SG_D1.fcs")
+## Model for So, Fn and Pi in BHI2
+fcs_names_pi <- c("20200512_Fabian_14strainID_BHI2_24h_Fn_C_1000_SG_B5.fcs",
+                  "20200512_Fabian_14strainID_BHI2_24h_Pi_A_1000_SG_A1.fcs",
+                  "20200512_Fabian_14strainID_BHI2_24h_So_A_1000_SG_D1.fcs")
+
 Sample_Info_sb_pi <- Sample_Info %>% dplyr::filter(name %in% fcs_names_pi)
 
 Model_RF_NotNormalized_Pi <- RandomF_FCS_tmp(flowData_transformed[fcs_names_pi], Sample_Info_sb_pi, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
 Model_RF_Pi <- RandomF_FCS_tmp(flowData_transformed_2[fcs_names_pi], Sample_Info_sb_pi, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
 
 # Run Random Forest classifier to predict the Strain based on the single-cell FCM data
-#Choose the fcs files in which the model will be used/tested
+# Choose the fcs files in which the model will be used/tested
 fcs_topre <- c("20200617_Fabian_14strainID_MM_24h_Co2_A_100_SG_A7.fcs",
                "20200617_Fabian_14strainID_MM_24h_Co2_B_100_SG_C7.fcs",
                "20200617_Fabian_14strainID_BHI2_24h_Co2_A_1000_SG_A2.fcs",
