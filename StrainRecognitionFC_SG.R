@@ -434,11 +434,11 @@ fcs_names <- c("20200512_Fabian_14strainID_BHI2_24h_Fn_C_1000_SG_B5.fcs",
 # Sample info has to contain a column called 'name' which matches the sammplenames of the fcs files
 Sample_Info_sb <- Sample_Info %>% dplyr::filter(name %in% fcs_names)
 
-#Model_RF <- Phenoflow::RandomF_FCS(flowData_transformed_2[fcs_names], Sample_Info_sb, target_label = "Strain", downsample = 1000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
+Model_RF <- Phenoflow::RandomF_FCS(flowData_transformed_2[fcs_names], Sample_Info_sb, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
 
-# Using Jasmine's function
-Model_RF <- RandomF_FCS_tmp(flowData_transformed_2[fcs_names], Sample_Info_sb, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
-Model_RF_NotNormalized <- RandomF_FCS_tmp(flowData_transformed[fcs_names], Sample_Info_sb, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
+# # Using Jasmine's function
+# Model_RF <- RandomF_FCS_tmp(flowData_transformed_2[fcs_names], Sample_Info_sb, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
+# Model_RF_NotNormalized <- RandomF_FCS_tmp(flowData_transformed[fcs_names], Sample_Info_sb, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
 
 
 ## Model for So, Fn and Pi in BHI2
@@ -448,11 +448,11 @@ fcs_names_pi <- c("20200512_Fabian_14strainID_BHI2_24h_Fn_C_1000_SG_B5.fcs",
 
 Sample_Info_sb_pi <- Sample_Info %>% dplyr::filter(name %in% fcs_names_pi)
 
-Model_RF_NotNormalized_Pi <- RandomF_FCS_tmp(flowData_transformed[fcs_names_pi], Sample_Info_sb_pi, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
-Model_RF_Pi <- RandomF_FCS_tmp(flowData_transformed_2[fcs_names_pi], Sample_Info_sb_pi, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
+Model_RF_NotNormalized_Pi <- Phenoflow::RandomF_FCS(flowData_transformed[fcs_names_pi], Sample_Info_sb_pi, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
+Model_RF_Pi <- Phenoflow::RandomF_FCS(flowData_transformed_2[fcs_names_pi], Sample_Info_sb_pi, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
 
 # Run Random Forest classifier to predict the Strain based on the single-cell FCM data
-# Choose the fcs files in which the model will be used/tested
+# fcs files for co-culture 1 and 2 are selected
 fcs_topre <- c("20200617_Fabian_14strainID_MM_24h_Co2_A_100_SG_A7.fcs",
                "20200617_Fabian_14strainID_MM_24h_Co2_B_100_SG_C7.fcs",
                "20200617_Fabian_14strainID_BHI2_24h_Co2_A_1000_SG_A2.fcs",
@@ -475,8 +475,65 @@ fcs_topre <- c("20200617_Fabian_14strainID_MM_24h_Co2_A_100_SG_A7.fcs",
                "20200618_Fabian_14strainID_MM_48h_Co1_B_100_SG_A7.fcs",
                "20200618_Fabian_14strainID_MM_48h_Co1_C_100_SG_B7.fcs")
 
-flowData_topre <- flowData_transformed_2[fcs_topre]
+fcs_topre_BHI2 <- c("20200617_Fabian_14strainID_BHI2_24h_Co2_A_1000_SG_A2.fcs",
+               "20200617_Fabian_14strainID_BHI2_24h_Co2_B_1000_SG_C2.fcs",
+               "20200617_Fabian_14strainID_BHI2_24h_Co2_C_1000_SG_G1.fcs",
+               "20200618_Fabian_14strainID_BHI2_48h_Co2_A_1000_SG_A2.fcs",
+               "20200618_Fabian_14strainID_BHI2_48h_Co2_B_1000_SG_B2.fcs",
+               "20200618_Fabian_14strainID_BHI2_48h_Co2_C_1000_SG_D1.fcs",
+               "20200618_Fabian_14strainID_BHI2_48h_Co1_A_1000_SG_A1.fcs",
+               "20200618_Fabian_14strainID_BHI2_48h_Co1_B_1000_SG_B1.fcs",
+               "20200617_Fabian_14strainID_BHI2_24h_Co1_A_1000_SG_A1.fcs",
+               "20200617_Fabian_14strainID_BHI2_24h_Co1_B_1000_SG_C1.fcs",
+               "20200617_Fabian_14strainID_BHI2_24h_Co1_C_1000_SG_E1.fcs",
+               "20200618_Fabian_14strainID_BHI2_48h_Co1_C_1000_SG_C1.fcs")
+
+flowData_topre_BHI2 <- flowData_transformed_2[fcs_topre_BHI2]
+
+test_pred_BHI2 <- RandomF_predict(x = Model_RF[[1]], new_data =  flowData_topre_BHI2, cleanFCS = FALSE)
+test_pred_BHI2
 
 
-test_pred <- RandomF_predict(x = Model_RF[[1]], new_data =  flowData_topre, cleanFCS = FALSE)
-test_pred
+fcs_topre_MM <- c("20200617_Fabian_14strainID_MM_24h_Co2_A_100_SG_A7.fcs",
+               "20200617_Fabian_14strainID_MM_24h_Co2_B_100_SG_C7.fcs",
+               "20200618_Fabian_14strainID_MM_48h_Co2_A_100_SG_A8.fcs",
+               "20200618_Fabian_14strainID_MM_48h_Co2_B_100_SG_C7.fcs",
+               "20200618_Fabian_14strainID_MM_48h_Co2_B_100_SG_C7.fcs",
+               "20200617_Fabian_14strainID_MM_24h_Co1_B_100_SG_C6.fcs",
+               "20200617_Fabian_14strainID_MM_24h_Co1_C_100_SG_E6.fcs",
+               "20200618_Fabian_14strainID_MM_48h_Co1_B_100_SG_A7.fcs",
+               "20200618_Fabian_14strainID_MM_48h_Co1_C_100_SG_B7.fcs")
+
+flowData_topre_MM <- flowData_transformed_2[fcs_topre_MM]
+
+test_pred_MM <- RandomF_predict(x = Model_RF[[1]], new_data =  flowData_topre_MM, cleanFCS = FALSE)
+test_pred_MM
+
+# fcs files for artificial mixes are selected
+fcs_topre_BHI2_AM <- c("20200512_Fabian_14strainID_BHI2_NA_Mix1_NA_1000_SG_A8.fcs",
+                       "20200512_Fabian_14strainID_BHI2_NA_Mix1_NA_1000_SG_A9.fcs",
+                       "20200512_Fabian_14strainID_BHI2_NA_Mix2_NA_1000_SG_A10.fcs",
+                       "20200512_Fabian_14strainID_BHI2_NA_Mix2_NA_1000_SG_A11.fcs",
+                       "20200512_Fabian_14strainID_BHI2_NA_Mix8_NA_1000_SG_D10.fcs",
+                       "20200512_Fabian_14strainID_BHI2_NA_Mix8_NA_1000_SG_D11.fcs",
+                       "20200512_Fabian_14strainID_BHI2_NA_Mix9_NA_1000_SG_E8.fcs",
+                       "20200512_Fabian_14strainID_BHI2_NA_Mix9_NA_1000_SG_E9.fcs")
+
+flowData_topre_BHI2_AM <- flowData_transformed_2[fcs_topre_BHI2_AM]
+
+test_pred_BHI2_AM <- RandomF_predict(x = Model_RF[[1]], new_data =  flowData_topre_BHI2_AM, cleanFCS = FALSE)
+test_pred_BHI2_AM
+
+## Model based on two strains (Fn, So)
+# Select the fcs files based on which the model will be trained --> Fn (replicate C), So (replicate A), Pg (replicate B)
+fcs_names_sofn <- c("20200512_Fabian_14strainID_BHI2_24h_Fn_C_1000_SG_B5.fcs",
+               "20200512_Fabian_14strainID_BHI2_24h_So_A_1000_SG_D1.fcs")
+
+# Sample info has to contain a column called 'name' which matches the sammplenames of the fcs files
+Sample_Info_sb_sofn <- Sample_Info %>% dplyr::filter(name %in% fcs_names_sofn)
+
+Model_RF_sofn <- Phenoflow::RandomF_FCS(flowData_transformed_2[fcs_names_sofn], Sample_Info_sb_sofn, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
+
+# Predict artificial mixes with 2 strain model
+test_pred_BHI2_AM_sofn <- RandomF_predict(x = Model_RF_sofn[[1]], new_data =  flowData_topre_BHI2_AM, cleanFCS = FALSE)
+test_pred_BHI2_AM_sofn
