@@ -405,19 +405,20 @@ write.csv2(file="PredictedCells_all.csv", test_pred_all)
 
 
 
-
-##############################################################################
-
-
-
-
-
-####################
+################################
+# Some extra models #
+################################
 
 # Run random forest for all Streptococcus
 
 # Select fcs files
-fcs_names_streps <- c("Sg_10_3_20191015_160531.fcs", "Smi_10_3_20191015_160639.fcs", "Smu_10_3_20191015_160820.fcs", "So_10_3_20191015_160057.fcs", "Ssal_10_3_20191015_160238.fcs", "Ssan_10_3_20191015_160415.fcs", "Ssob_10_3_20191015_161002.fcs")
+fcs_names_streps <- c("Sg_10_3_20191015_160531.fcs",
+                      "Smi_10_3_20191015_160639.fcs",
+                      "Smu_10_3_20191015_160820.fcs",
+                      "So_10_3_20191015_160057.fcs",
+                      "Ssal_10_3_20191015_160238.fcs",
+                      "Ssan_10_3_20191015_160415.fcs",
+                      "Ssob_10_3_20191015_161002.fcs")
 # Sample info has to contain a column called 'name' which matches the samplenames of the fcs files
 Sample_Info_streps <- Sample_Info %>% dplyr::filter(name %in% fcs_names_streps)
 # Random forest model
@@ -426,7 +427,12 @@ Model_RF_streps <- Phenoflow::RandomF_FCS(flowData_transformed[fcs_names_streps]
 # Run random forest for all strains except Streptococcus
 
 # Select fcs files
-fcs_names_no_streps <- c("Aa_10_3_20191015_161944.fcs", "Av_10_3_20191015_161506.fcs", "Fn_10_3_20191015_161647.fcs", "Pg_10_3_20191017_145248.fcs", "Pi_10_3_20191015_161828.fcs", "Vp_10_3_20191015_161144.fcs")
+fcs_names_no_streps <- c("Aa_10_3_20191015_161944.fcs",
+                         "Av_10_3_20191015_161506.fcs",
+                         "Fn_10_3_20191015_161647.fcs",
+                         "Pg_10_3_20191017_145248.fcs",
+                         "Pi_10_3_20191015_161828.fcs",
+                         "Vp_10_3_20191015_161144.fcs")
 # Sample info has to contain a column called 'name' which matches the samplenames of the fcs files
 Sample_Info_no_streps <- Sample_Info %>% dplyr::filter(name %in% fcs_names_no_streps)
 # Random forest model
@@ -435,7 +441,19 @@ Model_RF_no_streps <- Phenoflow::RandomF_FCS(flowData_transformed[fcs_names_no_s
 #### Can one get high performance when training based on genus level?
 
 #Select the fcs files based on which the model will be trained- all strains expect An
-fcs_names_genus <- c("Aa_10_3_20191015_161944.fcs", "Av_10_3_20191015_161506.fcs","Fn_10_3_20191015_161647.fcs", "Pg_10_3_20191017_145248.fcs","Pi_10_3_20191015_161828.fcs", "Sg_10_3_20191015_160531.fcs", "Smi_10_3_20191015_160639.fcs", "Smu_10_3_20191015_160820.fcs", "So_10_3_20191015_160057.fcs", "Ssal_10_3_20191015_160238.fcs", "Ssan_10_3_20191015_160415.fcs", "Ssob_10_3_20191015_161002.fcs","Vp_10_3_20191015_161144.fcs")
+fcs_names_genus <- c("Aa_10_3_20191015_161944.fcs",
+                     "Av_10_3_20191015_161506.fcs",
+                     "Fn_10_3_20191015_161647.fcs",
+                     "Pg_10_3_20191017_145248.fcs",
+                     "Pi_10_3_20191015_161828.fcs",
+                     "Sg_10_3_20191015_160531.fcs",
+                     "Smi_10_3_20191015_160639.fcs",
+                     "Smu_10_3_20191015_160820.fcs",
+                     "So_10_3_20191015_160057.fcs",
+                     "Ssal_10_3_20191015_160238.fcs",
+                     "Ssan_10_3_20191015_160415.fcs",
+                     "Ssob_10_3_20191015_161002.fcs",
+                     "Vp_10_3_20191015_161144.fcs")
 # Sample info has to contain a column called 'name' which matches the samplenames of the fcs files
 Sample_Info_genus <- Sample_Info %>% dplyr::filter(name %in% fcs_names_genus)
 # Random forest model
@@ -444,7 +462,14 @@ Model_RF_13strains_genus <- Phenoflow::RandomF_FCS(flowData_transformed[fcs_name
 ### Compare previous model to model on species level, only including 2 streps
 
 #Select the fcs files based on which the model will be trained- all strains expect An
-fcs_names_8strains <- c("Aa_10_3_20191015_161944.fcs", "Av_10_3_20191015_161506.fcs","Fn_10_3_20191015_161647.fcs", "Pg_10_3_20191017_145248.fcs","Pi_10_3_20191015_161828.fcs", "Smu_10_3_20191015_160820.fcs", "So_10_3_20191015_160057.fcs", "Vp_10_3_20191015_161144.fcs")
+fcs_names_8strains <- c("Aa_10_3_20191015_161944.fcs",
+                        "Av_10_3_20191015_161506.fcs",
+                        "Fn_10_3_20191015_161647.fcs",
+                        "Pg_10_3_20191017_145248.fcs",
+                        "Pi_10_3_20191015_161828.fcs",
+                        "Smu_10_3_20191015_160820.fcs",
+                        "So_10_3_20191015_160057.fcs",
+                        "Vp_10_3_20191015_161144.fcs")
 # Sample info has to contain a column called 'name' which matches the samplenames of the fcs files
 Sample_Info_8strains <- Sample_Info %>% dplyr::filter(name %in% fcs_names_8strains)
 # Random forest model
@@ -453,7 +478,13 @@ Model_RF_8strains <- Phenoflow::RandomF_FCS(flowData_transformed[fcs_names_8stra
 ### Compare previous model to model on species level, only including 1 strep
 
 #Select the fcs files based on which the model will be trained- all strains expect An
-fcs_names_7strains <- c("Aa_10_3_20191015_161944.fcs", "Av_10_3_20191015_161506.fcs","Fn_10_3_20191015_161647.fcs", "Pg_10_3_20191017_145248.fcs","Pi_10_3_20191015_161828.fcs", "So_10_3_20191015_160057.fcs", "Vp_10_3_20191015_161144.fcs")
+fcs_names_7strains <- c("Aa_10_3_20191015_161944.fcs",
+                        "Av_10_3_20191015_161506.fcs",
+                        "Fn_10_3_20191015_161647.fcs",
+                        "Pg_10_3_20191017_145248.fcs",
+                        "Pi_10_3_20191015_161828.fcs",
+                        "So_10_3_20191015_160057.fcs",
+                        "Vp_10_3_20191015_161144.fcs")
 # Sample info has to contain a column called 'name' which matches the samplenames of the fcs files
 Sample_Info_7strains <- Sample_Info %>% dplyr::filter(name %in% fcs_names_7strains)
 # Random forest model
