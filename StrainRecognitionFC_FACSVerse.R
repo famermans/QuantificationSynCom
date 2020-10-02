@@ -2,7 +2,7 @@
 
 ## Clear environment and set working directory
 rm(list = ls())
-setwd("/media/projects1/Fabian/Oral microbiome/20191017 Strain identification")
+setwd("/media/projects1/Fabian/Oral microbiome/StrainRecognitionFC/FACSVerse")
 
 ## Load libraries
 library("Phenoflow")
@@ -27,10 +27,10 @@ set.seed(777)
 
 #### Loading data ----
 
-Datapath <- "/media/projects1/Fabian/Oral microbiome/20191017 Strain identification/all fcsfiles"
+Datapath <- "/media/projects1/Fabian/Oral microbiome/StrainRecognitionFC/FACSVerse/fcsfiles"
 fcsfiles <- list.files(path = Datapath, recursive = TRUE, pattern = ".fcs", full.names = TRUE)
 flowData <- flowCore::read.flowSet(files = fcsfiles, transformation = FALSE)
-metadata <- read.table("/media/projects1/Fabian/Oral microbiome/20191017 Strain identification/201910_MetaData3.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+metadata <- read.table("/media/projects1/Fabian/Oral microbiome/StrainRecognitionFC/FACSVerse/201910_MetaData3.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
 
 
 #### Transformation of data ----
