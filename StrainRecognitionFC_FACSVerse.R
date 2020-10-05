@@ -145,7 +145,7 @@ vol <- data.frame(Sample_names = flowCore::sampleNames(flowData_transformed),
 # Extract the total number of events per fcs file in order to calculate accuracy of model to predict strain
 totalTable <- toTable(summary(flowCore::filter(flowData_transformed, polyGate1)))
 totalTable <- left_join(totalTable, vol, by = c("sample" = "Sample_names"))
-write.csv2(file="totalCells.csv", totalTable)
+write.csv2(file = "totalCells.csv", totalTable)
 
 ### Build random forest for So and Fn
 fcs_names_SoFn <- c("So_10_3_20191015_160057.fcs",
