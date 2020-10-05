@@ -497,7 +497,7 @@ test_pred_BHI2_SoFnPg <- test_pred_BHI2_SoFnPg %>%
 write.csv2(file = "PredictedCellsSoFnPg.csv", test_pred_BHI2_SoFnPg)
 
 ### Model for So and Fn in BHI2
-# Select the fcs files based on which the model will be trained --> Fn (replicate C), So (replicate A), Pg (replicate B) grown in BHI2
+# Select the fcs files based on which the model will be trained --> Fn (replicate C), So (replicate A) grown in BHI2
 fcs_names_SoFn <- c("20200512_Fabian_14strainID_BHI2_24h_Fn_C_1000_SG_B5.fcs",
                     "20200512_Fabian_14strainID_BHI2_24h_So_A_1000_SG_D1.fcs")
 
@@ -553,6 +553,80 @@ fcs_names_SoFnPi <- c("20200512_Fabian_14strainID_BHI2_24h_Fn_C_1000_SG_B5.fcs",
 
 Sample_Info_sb_SoFnPi <- Sample_Info %>% dplyr::filter(name %in% fcs_names_SoFnPi)
 Model_RF_SoFnPi <- Phenoflow::RandomF_FCS(flowData_transformed_gated[fcs_names_SoFnPi], Sample_Info_sb_SoFnPi, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
+
+
+### Model for So, Fn, Pg and Vp
+# Sample selection Vp
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(85:90, 381:386)], filter = polyGate5,
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "Quality check Vp", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+# Select the fcs files based on which the model will be trained --> Fn (replicate C), So (replicate A), Pg (replicate B), Vp (replicate B) grown in BHI2
+fcs_names_SoFnPgVp <- c("20200512_Fabian_14strainID_BHI2_24h_Fn_C_1000_SG_B5.fcs",
+                        "20200512_Fabian_14strainID_BHI2_24h_Pg_B_1000_SG_E10.fcs",
+                        "20200512_Fabian_14strainID_BHI2_24h_So_A_1000_SG_D1.fcs",
+                        "20200512_Fabian_14strainID_BHI2_24h_Vp_B_1000_SG_A10.fcs")
+
+Sample_Info_SoFnPgVp <- Sample_Info %>% dplyr::filter(name %in% fcs_names_SoFnPgVp)
+Model_RF_SoFnPgVp <- Phenoflow::RandomF_FCS(flowData_transformed_gated[fcs_names_SoFnPgVp], Sample_Info_SoFnPgVp, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
+
+## Make predictions for relevant mixtures and co-cultures in BHI2
+fcs_topre_BHI2_SoFnPgVp <- c("20200617_Fabian_14strainID_BHI2_24h_Co1_A_1000_SG_A1.fcs",
+                             "20200617_Fabian_14strainID_BHI2_24h_Co1_A_1000_SG_B1.fcs",
+                             "20200617_Fabian_14strainID_BHI2_24h_Co1_B_1000_SG_C1.fcs",
+                             "20200617_Fabian_14strainID_BHI2_24h_Co1_B_1000_SG_D1.fcs",
+                             "20200617_Fabian_14strainID_BHI2_24h_Co1_C_1000_SG_E1.fcs",
+                             "20200617_Fabian_14strainID_BHI2_24h_Co1_C_1000_SG_F1.fcs",
+                             "20200618_Fabian_14strainID_BHI2_48h_Co1_A_1000_SG_A1.fcs",
+                             "20200618_Fabian_14strainID_BHI2_48h_Co1_B_1000_SG_B1.fcs",
+                             "20200618_Fabian_14strainID_BHI2_48h_Co1_C_1000_SG_C1.fcs",
+                             "20200617_Fabian_14strainID_BHI2_24h_Co2_A_1000_SG_A2.fcs",
+                             "20200617_Fabian_14strainID_BHI2_24h_Co2_A_1000_SG_B2.fcs",
+                             "20200617_Fabian_14strainID_BHI2_24h_Co2_B_1000_SG_C2.fcs",
+                             "20200617_Fabian_14strainID_BHI2_24h_Co2_B_1000_SG_D2.fcs",
+                             "20200617_Fabian_14strainID_BHI2_24h_Co2_C_1000_SG_G1.fcs",
+                             "20200617_Fabian_14strainID_BHI2_24h_Co2_C_1000_SG_H1.fcs",
+                             "20200618_Fabian_14strainID_BHI2_48h_Co2_A_1000_SG_A2.fcs",
+                             "20200618_Fabian_14strainID_BHI2_48h_Co2_B_1000_SG_B2.fcs",
+                             "20200618_Fabian_14strainID_BHI2_48h_Co2_C_1000_SG_D1.fcs",
+                             "20200617_Fabian_14strainID_BHI2_24h_Co3_A_1000_SG_A3.fcs",
+                             "20200617_Fabian_14strainID_BHI2_24h_Co3_A_1000_SG_B3.fcs",
+                             "20200617_Fabian_14strainID_BHI2_24h_Co3_B_1000_SG_E2.fcs",
+                             "20200617_Fabian_14strainID_BHI2_24h_Co3_B_1000_SG_F2.fcs",
+                             "20200617_Fabian_14strainID_BHI2_24h_Co3_C_1000_SG_G2.fcs",
+                             "20200617_Fabian_14strainID_BHI2_24h_Co3_C_1000_SG_H2.fcs",
+                             "20200618_Fabian_14strainID_BHI2_48h_Co3_A_1000_SG_A3.fcs",
+                             "20200618_Fabian_14strainID_BHI2_48h_Co3_B_1000_SG_C2.fcs",
+                             "20200618_Fabian_14strainID_BHI2_48h_Co3_C_1000_SG_D2.fcs",
+                             "20200512_Fabian_14strainID_BHI2_NA_Mix1_NA_1000_SG_A8.fcs",
+                             "20200512_Fabian_14strainID_BHI2_NA_Mix1_NA_1000_SG_A9.fcs",
+                             "20200512_Fabian_14strainID_BHI2_NA_Mix2_NA_1000_SG_A10.fcs",
+                             "20200512_Fabian_14strainID_BHI2_NA_Mix2_NA_1000_SG_A11.fcs",
+                             "20200512_Fabian_14strainID_BHI2_NA_Mix3_NA_1000_SG_B8.fcs",
+                             "20200512_Fabian_14strainID_BHI2_NA_Mix3_NA_1000_SG_B9.fcs",
+                             "20200512_Fabian_14strainID_BHI2_NA_Mix8_NA_1000_SG_D10.fcs",
+                             "20200512_Fabian_14strainID_BHI2_NA_Mix8_NA_1000_SG_D11.fcs",
+                             "20200512_Fabian_14strainID_BHI2_NA_Mix9_NA_1000_SG_E8.fcs",
+                             "20200512_Fabian_14strainID_BHI2_NA_Mix9_NA_1000_SG_E9.fcs")
+
+flowData_topre_BHI2_SoFnPgVp <- flowData_transformed_gated[fcs_topre_BHI2_SoFnPgVp]
+test_pred_BHI2_SoFnPgVp <- RandomF_predict(x = Model_RF_SoFnPgVp[[1]], new_data =  flowData_topre_BHI2_SoFnPgVp, cleanFCS = FALSE)
+
+# Export predictions
+test_pred_BHI2_SoFnPgVp <- left_join(test_pred_BHI2_SoFnPgVp, vol2, by = c("Sample" = "Sample_name"))
+test_pred_BHI2_SoFnPgVp <- left_join(test_pred_BHI2_SoFnPgVp, Sample_Info, by = c("Sample" = "name"))
+test_pred_BHI2_SoFnPgVp <- test_pred_BHI2_SoFnPgVp %>%
+        mutate(Concentration = (Counts*Dilution)/Volume)
+# Export as csv file
+write.csv2(file = "PredictedCellsSoFnPgVp.csv", test_pred_BHI2_SoFnPgVp)
+
+
+
+
+
+
 
 
 
