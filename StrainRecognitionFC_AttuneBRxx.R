@@ -424,29 +424,31 @@ TotalCount <- left_join(TotalCount, cell_concentrations, by = c("sample" = "Samp
 write.csv2(file = "TotalCount.csv", TotalCount)
 
 ### Model for So, Fn and Pg in BHI2
-# Sample selection So, Fn and Pg
-xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(23:28, 319:324)], filter = polyGate5,
-       scales = list(y = list(limits = c(0, 16)),
-                     x = list(limits = c(0, 16))),
-       axis = axis.default, nbin = 125, main = "Quality check Fn", xlab = "BL1-A", ylab = "BL3-A",
-       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
-
+# Sample selection So
 xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(61:66, 357:362)], filter = polyGate5,
        scales = list(y = list(limits = c(0, 16)),
                      x = list(limits = c(0, 16))),
        axis = axis.default, nbin = 125, main = "Quality check So", xlab = "BL1-A", ylab = "BL3-A",
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
 
+# Sample selection Fn
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(23:28, 319:324)], filter = polyGate5,
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "Quality check Fn", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+# Sample selection Pg
 xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(31:36, 327:332)], filter = polyGate5,
        scales = list(y = list(limits = c(0, 16)),
                      x = list(limits = c(0, 16))),
        axis = axis.default, nbin = 125, main = "Quality check Pg", xlab = "BL1-A", ylab = "BL3-A",
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
 
-# Select the fcs files based on which the model will be trained --> Fn (replicate C), So (replicate A), Pg (replicate B) grown in BHI2
-fcs_names_SoFnPg <- c("20200512_Fabian_14strainID_BHI2_24h_Fn_C_1000_SG_B5.fcs",
-                      "20200512_Fabian_14strainID_BHI2_24h_Pg_B_1000_SG_E10.fcs",
-                      "20200512_Fabian_14strainID_BHI2_24h_So_A_1000_SG_D1.fcs")
+# Select the fcs files based on which the model will be trained --> So (replicate A), Fn (replicate C), Pg (replicate B) grown in BHI2
+fcs_names_SoFnPg <- c("20200512_Fabian_14strainID_BHI2_24h_So_A_1000_SG_D1.fcs",
+                      "20200512_Fabian_14strainID_BHI2_24h_Fn_C_1000_SG_B5.fcs",
+                      "20200512_Fabian_14strainID_BHI2_24h_Pg_B_1000_SG_E10.fcs")
 
 Sample_Info_SoFnPg <- Sample_Info %>% dplyr::filter(name %in% fcs_names_SoFnPg)
 
@@ -506,9 +508,9 @@ test_pred_BHI2_SoFnPg <- test_pred_BHI2_SoFnPg %>%
 write.csv2(file = "PredictedCellsSoFnPg.csv", test_pred_BHI2_SoFnPg)
 
 ### Model for So and Fn in BHI2
-# Select the fcs files based on which the model will be trained --> Fn (replicate C), So (replicate A) grown in BHI2
-fcs_names_SoFn <- c("20200512_Fabian_14strainID_BHI2_24h_Fn_C_1000_SG_B5.fcs",
-                    "20200512_Fabian_14strainID_BHI2_24h_So_A_1000_SG_D1.fcs")
+# Select the fcs files based on which the model will be trained --> So (replicate A), Fn (replicate C) grown in BHI2
+fcs_names_SoFn <- c("20200512_Fabian_14strainID_BHI2_24h_So_A_1000_SG_D1.fcs",
+                    "20200512_Fabian_14strainID_BHI2_24h_Fn_C_1000_SG_B5.fcs")
 
 Sample_Info_SoFn <- Sample_Info %>% dplyr::filter(name %in% fcs_names_SoFn)
 Model_RF_SoFn <- Phenoflow::RandomF_FCS(flowData_transformed_gated[fcs_names_SoFn], Sample_Info_SoFn, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
@@ -556,9 +558,17 @@ write.csv2(file = "PredictedCellsSoFn.csv", test_pred_BHI2_SoFn)
 
 
 ### Model for So, Fn and Pi in BHI2 for comparison in performance compared to FACSVerse
-fcs_names_SoFnPi <- c("20200512_Fabian_14strainID_BHI2_24h_Fn_C_1000_SG_B5.fcs",
-                      "20200512_Fabian_14strainID_BHI2_24h_Pi_A_1000_SG_A1.fcs",
-                      "20200512_Fabian_14strainID_BHI2_24h_So_A_1000_SG_D1.fcs")
+# Sample selection Pi
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(37:42, 333:338)], filter = polyGate5,
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "Quality check Pi", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+# Select the fcs files based on which the model will be trained --> So (replicate A), Fn (replicate C), Pi (replicate A) grown in BHI2
+fcs_names_SoFnPi <- c("20200512_Fabian_14strainID_BHI2_24h_So_A_1000_SG_D1.fcs",
+                      "20200512_Fabian_14strainID_BHI2_24h_Fn_C_1000_SG_B5.fcs",
+                      "20200512_Fabian_14strainID_BHI2_24h_Pi_A_1000_SG_A1.fcs")
 
 Sample_Info_sb_SoFnPi <- Sample_Info %>% dplyr::filter(name %in% fcs_names_SoFnPi)
 Model_RF_SoFnPi <- Phenoflow::RandomF_FCS(flowData_transformed_gated[fcs_names_SoFnPi], Sample_Info_sb_SoFnPi, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
@@ -572,10 +582,10 @@ xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(85:90, 381:386)], filter =
        axis = axis.default, nbin = 125, main = "Quality check Vp", xlab = "BL1-A", ylab = "BL3-A",
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
 
-# Select the fcs files based on which the model will be trained --> Fn (replicate C), So (replicate A), Pg (replicate B), Vp (replicate B) grown in BHI2
-fcs_names_SoFnPgVp <- c("20200512_Fabian_14strainID_BHI2_24h_Fn_C_1000_SG_B5.fcs",
+# Select the fcs files based on which the model will be trained --> So (replicate A), Fn (replicate C), Pg (replicate B), Vp (replicate B) grown in BHI2
+fcs_names_SoFnPgVp <- c("20200512_Fabian_14strainID_BHI2_24h_So_A_1000_SG_D1.fcs",
+                        "20200512_Fabian_14strainID_BHI2_24h_Fn_C_1000_SG_B5.fcs",
                         "20200512_Fabian_14strainID_BHI2_24h_Pg_B_1000_SG_E10.fcs",
-                        "20200512_Fabian_14strainID_BHI2_24h_So_A_1000_SG_D1.fcs",
                         "20200512_Fabian_14strainID_BHI2_24h_Vp_B_1000_SG_A10.fcs")
 
 Sample_Info_SoFnPgVp <- Sample_Info %>% dplyr::filter(name %in% fcs_names_SoFnPgVp)
@@ -723,6 +733,7 @@ fcs_names_SoSsalSsanSmiSgVpAvAn <- c("20200512_Fabian_14strainID_BHI2_24h_So_A_1
 
 Sample_Info_SoSsalSsanSmiSgVpAvAn <- Sample_Info %>% dplyr::filter(name %in% fcs_names_SoSsalSsanSmiSgVpAvAn)
 Model_RF_SoSsalSsanSmiSgVpAvAn <- Phenoflow::RandomF_FCS(flowData_transformed_gated[fcs_names_SoSsalSsanSmiSgVpAvAn], Sample_Info_SoSsalSsanSmiSgVpAvAn, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
+# REMARK: not enough cells for An to train model --> left out of the calculations
 
 ## Make predictions for relevant mixtures and co-cultures in BHI2
 fcs_topre_BHI2_SoSsalSsanSmiSgVpAvAn <- c("20200617_Fabian_14strainID_BHI2_24h_Co4_A_1000_SG_C3.fcs",
@@ -749,6 +760,180 @@ test_pred_BHI2_SoSsalSsanSmiSgVpAvAn <- test_pred_BHI2_SoSsalSsanSmiSgVpAvAn %>%
 write.csv2(file = "PredictedCellsSoSsalSsanSmiSgVpAvAn.csv", test_pred_BHI2_SoSsalSsanSmiSgVpAvAn)
 
 
+### Model for So, Ssal, Ssan, Smi, Sg, Smu, Ssob
+# Sample selection Smu
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(55:60, 351:356)], filter = polyGate5,
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "Quality check Smu", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+# Sample selection Ssob
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(79:84, 375:380)], filter = polyGate5,
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "Quality check Ssob", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+# Select the fcs files based on which the model will be trained --> So (replicate A), Ssal (replicate A), Ssan (replicate B), Smi (replicate A), Sg (replicate C), Smu (replicate A), Ssob (replicate A) grown in BHI2
+fcs_names_SoSsalSsanSmiSgSmuSsob <- c("20200512_Fabian_14strainID_BHI2_24h_So_A_1000_SG_D1.fcs",
+                                     "20200512_Fabian_14strainID_BHI2_24h_Ssal_A_1000_SG_F2.fcs",
+                                     "20200512_Fabian_14strainID_BHI2_24h_Ssan_B_1000_SG_C3.fcs",
+                                     "20200512_Fabian_14strainID_BHI2_24h_Smi_A_1000_SG_F7.fcs",
+                                     "20200512_Fabian_14strainID_BHI2_24h_Sg_C_1000_SG_G5.fcs",
+                                     "20200512_Fabian_14strainID_BHI2_24h_Smu_A_1000_SG_B7.fcs",
+                                     "20200512_Fabian_14strainID_BHI2_24h_Ssob_A_1000_SG_C7.fcs")
+
+Sample_Info_SoSsalSsanSmiSgSmuSsob <- Sample_Info %>% dplyr::filter(name %in% fcs_names_SoSsalSsanSmiSgSmuSsob)
+Model_RF_SoSsalSsanSmiSgSmuSsob <- Phenoflow::RandomF_FCS(flowData_transformed_gated[fcs_names_SoSsalSsanSmiSgSmuSsob], Sample_Info_SoSsalSsanSmiSgSmuSsob, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
+
+## Make predictions for relevant mixtures and co-cultures in BHI2
+fcs_topre_BHI2_SoSsalSsanSmiSgSmuSsob <- c("20200512_Fabian_14strainID_BHI2_NA_Mix5_NA_1000_SG_C8.fcs",
+                                           "20200512_Fabian_14strainID_BHI2_NA_Mix5_NA_1000_SG_C9.fcs")
+
+flowData_topre_BHI2_SoSsalSsanSmiSgSmuSsob <- flowData_transformed_gated[fcs_topre_BHI2_SoSsalSsanSmiSgSmuSsob]
+test_pred_BHI2_SoSsalSsanSmiSgSmuSsob <- RandomF_predict(x = Model_RF_SoSsalSsanSmiSgSmuSsob[[1]], new_data = flowData_topre_BHI2_SoSsalSsanSmiSgSmuSsob, cleanFCS = FALSE)
+
+# Export predictions
+test_pred_BHI2_SoSsalSsanSmiSgSmuSsob <- left_join(test_pred_BHI2_SoSsalSsanSmiSgSmuSsob, vol2, by = c("Sample" = "Sample_name"))
+test_pred_BHI2_SoSsalSsanSmiSgSmuSsob <- left_join(test_pred_BHI2_SoSsalSsanSmiSgSmuSsob, Sample_Info, by = c("Sample" = "name"))
+test_pred_BHI2_SoSsalSsanSmiSgSmuSsob <- test_pred_BHI2_SoSsalSsanSmiSgSmuSsob %>%
+        mutate(Concentration = (Counts*Dilution)/Volume)
+# Export as csv file
+write.csv2(file = "PredictedCellsSoSsalSsanSmiSgSmuSsob.csv", test_pred_BHI2_SoSsalSsanSmiSgSmuSsob)
+
+
+### Model for Aa, Fn, Pg, Pi, Smu, Ssob
+# Sample selection Aa
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(1:6, 297:302)], filter = polyGate5,
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "Quality check Aa", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+# Select the fcs files based on which the model will be trained --> Aa (replicate A), Fn (replicate C), Pg (replicate B), Pi (replicate A), Smu (replicate A), Ssob (replicate A) grown in BHI2
+fcs_names_AaFnPgPiSmuSsob <- c("20200512_Fabian_14strainID_BHI2_24h_Aa_A_1000_SG_D7.fcs",
+                               "20200512_Fabian_14strainID_BHI2_24h_Fn_C_1000_SG_B5.fcs",
+                               "20200512_Fabian_14strainID_BHI2_24h_Pg_B_1000_SG_E10.fcs",
+                               "20200512_Fabian_14strainID_BHI2_24h_Pi_A_1000_SG_A1.fcs",
+                               "20200512_Fabian_14strainID_BHI2_24h_Smu_A_1000_SG_B7.fcs",
+                               "20200512_Fabian_14strainID_BHI2_24h_Ssob_A_1000_SG_C7.fcs")
+
+Sample_Info_AaFnPgPiSmuSsob <- Sample_Info %>% dplyr::filter(name %in% fcs_names_AaFnPgPiSmuSsob)
+Model_RF_AaFnPgPiSmuSsob <- Phenoflow::RandomF_FCS(flowData_transformed_gated[fcs_names_AaFnPgPiSmuSsob], Sample_Info_AaFnPgPiSmuSsob, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
+
+## Make predictions for relevant mixtures and co-cultures in BHI2
+fcs_topre_BHI2_AaFnPgPiSmuSsob <- c("20200512_Fabian_14strainID_BHI2_NA_Mix6_NA_1000_SG_C10.fcs",
+                                    "20200512_Fabian_14strainID_BHI2_NA_Mix6_NA_1000_SG_C11.fcs",
+                                    "20200617_Fabian_14strainID_BHI2_24h_Co5_A_1000_SG_A4.fcs",
+                                    "20200617_Fabian_14strainID_BHI2_24h_Co5_A_1000_SG_B4.fcs",
+                                    "20200617_Fabian_14strainID_BHI2_24h_Co5_B_1000_SG_C4.fcs",
+                                    "20200617_Fabian_14strainID_BHI2_24h_Co5_B_1000_SG_D4.fcs",
+                                    "20200617_Fabian_14strainID_BHI2_24h_Co5_C_1000_SG_E4.fcs",
+                                    "20200617_Fabian_14strainID_BHI2_24h_Co5_C_1000_SG_F4.fcs",
+                                    "20200618_Fabian_14strainID_BHI2_48h_Co5_A_1000_SG_A4.fcs",
+                                    "20200618_Fabian_14strainID_BHI2_48h_Co5_B_1000_SG_B4.fcs",
+                                    "20200618_Fabian_14strainID_BHI2_48h_Co5_C_1000_SG_C4.fcs")
+
+flowData_topre_BHI2_AaFnPgPiSmuSsob <- flowData_transformed_gated[fcs_topre_BHI2_AaFnPgPiSmuSsob]
+test_pred_BHI2_AaFnPgPiSmuSsob <- RandomF_predict(x = Model_RF_AaFnPgPiSmuSsob[[1]], new_data = flowData_topre_BHI2_AaFnPgPiSmuSsob, cleanFCS = FALSE)
+
+# Export predictions
+test_pred_BHI2_AaFnPgPiSmuSsob <- left_join(test_pred_BHI2_AaFnPgPiSmuSsob, vol2, by = c("Sample" = "Sample_name"))
+test_pred_BHI2_AaFnPgPiSmuSsob <- left_join(test_pred_BHI2_AaFnPgPiSmuSsob, Sample_Info, by = c("Sample" = "name"))
+test_pred_BHI2_AaFnPgPiSmuSsob <- test_pred_BHI2_AaFnPgPiSmuSsob %>%
+        mutate(Concentration = (Counts*Dilution)/Volume)
+# Export as csv file
+write.csv2(file = "PredictedCellsAaFnPgPiSmuSsob.csv", test_pred_BHI2_AaFnPgPiSmuSsob)
+
+
+### Model for So, Ssal, Ssan, Smi, Sg, Vp, Aa, Fn, Pg, Pi, Smu, Ssob
+# Select the fcs files based on which the model will be trained --> So (replicate A), Ssal (replicate A), Ssan (replicate B), Smi (replicate A), Sg (replicate C), Vp (replicate B), Aa (replicate A), Fn (replicate C), Pg (replicate B), Pi (replicate A), Smu (replicate A), Ssob (replicate A) grown in BHI2
+fcs_names_SoSsalSsanSmiSgVpAaFnPgPiSmuSsob <- c("20200512_Fabian_14strainID_BHI2_24h_So_A_1000_SG_D1.fcs",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Ssal_A_1000_SG_F2.fcs",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Ssan_B_1000_SG_C3.fcs",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Smi_A_1000_SG_F7.fcs",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Sg_C_1000_SG_G5.fcs",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Vp_B_1000_SG_A10.fcs",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Aa_A_1000_SG_D7.fcs",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Fn_C_1000_SG_B5.fcs",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Pg_B_1000_SG_E10.fcs",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Pi_A_1000_SG_A1.fcs",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Smu_A_1000_SG_B7.fcs",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Ssob_A_1000_SG_C7.fcs")
+
+Sample_Info_SoSsalSsanSmiSgVpAaFnPgPiSmuSsob <- Sample_Info %>% dplyr::filter(name %in% fcs_names_SoSsalSsanSmiSgVpAaFnPgPiSmuSsob)
+Model_RF_SoSsalSsanSmiSgVpAaFnPgPiSmuSsob <- Phenoflow::RandomF_FCS(flowData_transformed_gated[fcs_names_SoSsalSsanSmiSgVpAaFnPgPiSmuSsob], Sample_Info_SoSsalSsanSmiSgVpAaFnPgPiSmuSsob, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
+
+## Make predictions for relevant mixtures and co-cultures in BHI2
+fcs_topre_BHI2_SoSsalSsanSmiSgVpAaFnPgPiSmuSsob <- c("20200512_Fabian_14strainID_BHI2_NA_Mix7_NA_1000_SG_D8.fcs",
+                                                     "20200512_Fabian_14strainID_BHI2_NA_Mix7_NA_1000_SG_D9.fcs",
+                                                     "20200617_Fabian_14strainID_BHI2_24h_Co6_A_1000_SG_A5.fcs",
+                                                     "20200617_Fabian_14strainID_BHI2_24h_Co6_A_1000_SG_B5.fcs",
+                                                     "20200617_Fabian_14strainID_BHI2_24h_Co6_B_1000_SG_C5.fcs",
+                                                     "20200617_Fabian_14strainID_BHI2_24h_Co6_B_1000_SG_D5.fcs",
+                                                     "20200617_Fabian_14strainID_BHI2_24h_Co6_C_1000_SG_G4.fcs",
+                                                     "20200617_Fabian_14strainID_BHI2_24h_Co6_C_1000_SG_H4.fcs",
+                                                     "20200618_Fabian_14strainID_BHI2_48h_Co6_A_1000_SG_A5.fcs",
+                                                     "20200618_Fabian_14strainID_BHI2_48h_Co6_B_1000_SG_B5.fcs",
+                                                     "20200618_Fabian_14strainID_BHI2_48h_Co6_C_1000_SG_D4.fcs")
+
+flowData_topre_BHI2_SoSsalSsanSmiSgVpAaFnPgPiSmuSsob <- flowData_transformed_gated[fcs_topre_BHI2_SoSsalSsanSmiSgVpAaFnPgPiSmuSsob]
+test_pred_BHI2_SoSsalSsanSmiSgVpAaFnPgPiSmuSsob <- RandomF_predict(x = Model_RF_SoSsalSsanSmiSgVpAaFnPgPiSmuSsob[[1]], new_data = flowData_topre_BHI2_SoSsalSsanSmiSgVpAaFnPgPiSmuSsob, cleanFCS = FALSE)
+
+# Export predictions
+test_pred_BHI2_SoSsalSsanSmiSgVpAaFnPgPiSmuSsob <- left_join(test_pred_BHI2_SoSsalSsanSmiSgVpAaFnPgPiSmuSsob, vol2, by = c("Sample" = "Sample_name"))
+test_pred_BHI2_SoSsalSsanSmiSgVpAaFnPgPiSmuSsob <- left_join(test_pred_BHI2_SoSsalSsanSmiSgVpAaFnPgPiSmuSsob, Sample_Info, by = c("Sample" = "name"))
+test_pred_BHI2_SoSsalSsanSmiSgVpAaFnPgPiSmuSsob <- test_pred_BHI2_SoSsalSsanSmiSgVpAaFnPgPiSmuSsob %>%
+        mutate(Concentration = (Counts*Dilution)/Volume)
+# Export as csv file
+write.csv2(file = "PredictedCellsSoSsalSsanSmiSgVpAaFnPgPiSmuSsob.csv", test_pred_BHI2_SoSsalSsanSmiSgVpAaFnPgPiSmuSsob)
+
+
+### Model for So, Ssal, Ssan, Smi, Sg, Vp, Av, An, Aa, Fn, Pg, Pi, Smu, Ssob
+# Select the fcs files based on which the model will be trained --> So (replicate A), Ssal (replicate A), Ssan (replicate B), Smi (replicate A), Sg (replicate C), Vp (replicate B), Av (replicate A), An (replicate A, B would be better but mixes were prepared with replicate A), Aa (replicate A), Fn (replicate C), Pg (replicate B), Pi (replicate A), Smu (replicate A), Ssob (replicate A) grown in BHI2
+fcs_names_SoSsalSsanSmiSgVpAvAnAaFnPgPiSmuSsob <- c("20200512_Fabian_14strainID_BHI2_24h_So_A_1000_SG_D1.fcs",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Ssal_A_1000_SG_F2.fcs",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Ssan_B_1000_SG_C3.fcs",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Smi_A_1000_SG_F7.fcs",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Sg_C_1000_SG_G5.fcs",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Vp_B_1000_SG_A10.fcs",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Av_A_1000_SG_E1.fcs",
+                                                "20200512_Fabian_14strainID_BHI2_24h_An_A_1000_SG_G7.fcs",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Aa_A_1000_SG_D7.fcs",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Fn_C_1000_SG_B5.fcs",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Pg_B_1000_SG_E10.fcs",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Pi_A_1000_SG_A1.fcs",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Smu_A_1000_SG_B7.fcs",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Ssob_A_1000_SG_C7.fcs")
+
+Sample_Info_SoSsalSsanSmiSgVpAvAnAaFnPgPiSmuSsob <- Sample_Info %>% dplyr::filter(name %in% fcs_names_SoSsalSsanSmiSgVpAvAnAaFnPgPiSmuSsob)
+Model_RF_SoSsalSsanSmiSgVpAvAnAaFnPgPiSmuSsob <- Phenoflow::RandomF_FCS(flowData_transformed_gated[fcs_names_SoSsalSsanSmiSgVpAvAnAaFnPgPiSmuSsob], Sample_Info_SoSsalSsanSmiSgVpAvAnAaFnPgPiSmuSsob, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
+# REMARK: not enough cells for An to train model --> left out of the calculations
+
+## Make predictions for relevant mixtures and co-cultures in BHI2
+fcs_topre_BHI2_SoSsalSsanSmiSgVpAvAnAaFnPgPiSmuSsob <- c("20200512_Fabian_14strainID_BHI2_NA_Mix7_NA_1000_SG_D8.fcs",
+                                                     "20200512_Fabian_14strainID_BHI2_NA_Mix7_NA_1000_SG_D9.fcs",
+                                                     "20200617_Fabian_14strainID_BHI2_24h_Co6_A_1000_SG_A5.fcs",
+                                                     "20200617_Fabian_14strainID_BHI2_24h_Co6_A_1000_SG_B5.fcs",
+                                                     "20200617_Fabian_14strainID_BHI2_24h_Co6_B_1000_SG_C5.fcs",
+                                                     "20200617_Fabian_14strainID_BHI2_24h_Co6_B_1000_SG_D5.fcs",
+                                                     "20200617_Fabian_14strainID_BHI2_24h_Co6_C_1000_SG_G4.fcs",
+                                                     "20200617_Fabian_14strainID_BHI2_24h_Co6_C_1000_SG_H4.fcs",
+                                                     "20200618_Fabian_14strainID_BHI2_48h_Co6_A_1000_SG_A5.fcs",
+                                                     "20200618_Fabian_14strainID_BHI2_48h_Co6_B_1000_SG_B5.fcs",
+                                                     "20200618_Fabian_14strainID_BHI2_48h_Co6_C_1000_SG_D4.fcs")
+
+flowData_topre_BHI2_SoSsalSsanSmiSgVpAvAnAaFnPgPiSmuSsob <- flowData_transformed_gated[fcs_topre_BHI2_SoSsalSsanSmiSgVpAvAnAaFnPgPiSmuSsob]
+test_pred_BHI2_SoSsalSsanSmiSgVpAvAnAaFnPgPiSmuSsob <- RandomF_predict(x = Model_RF_SoSsalSsanSmiSgVpAvAnAaFnPgPiSmuSsob[[1]], new_data = flowData_topre_BHI2_SoSsalSsanSmiSgVpAvAnAaFnPgPiSmuSsob, cleanFCS = FALSE)
+
+# Export predictions
+test_pred_BHI2_SoSsalSsanSmiSgVpAvAnAaFnPgPiSmuSsob <- left_join(test_pred_BHI2_SoSsalSsanSmiSgVpAvAnAaFnPgPiSmuSsob, vol2, by = c("Sample" = "Sample_name"))
+test_pred_BHI2_SoSsalSsanSmiSgVpAvAnAaFnPgPiSmuSsob <- left_join(test_pred_BHI2_SoSsalSsanSmiSgVpAvAnAaFnPgPiSmuSsob, Sample_Info, by = c("Sample" = "name"))
+test_pred_BHI2_SoSsalSsanSmiSgVpAvAnAaFnPgPiSmuSsob <- test_pred_BHI2_SoSsalSsanSmiSgVpAvAnAaFnPgPiSmuSsob %>%
+        mutate(Concentration = (Counts*Dilution)/Volume)
+# Export as csv file
+write.csv2(file = "PredictedCellsSoSsalSsanSmiSgVpAvAnAaFnPgPiSmuSsob.csv", test_pred_BHI2_SoSsalSsanSmiSgVpAvAnAaFnPgPiSmuSsob)
 
 
 
@@ -761,30 +946,10 @@ write.csv2(file = "PredictedCellsSoSsalSsanSmiSgVpAvAn.csv", test_pred_BHI2_SoSs
 
 
 
-# Run Random Forest classifier to predict the Strain based on the single-cell FCM data
-# fcs files for co-culture 1 and 2 are selected
-fcs_topre <- c("20200617_Fabian_14strainID_MM_24h_Co2_A_100_SG_A7.fcs",
-               "20200617_Fabian_14strainID_MM_24h_Co2_B_100_SG_C7.fcs",
-               "20200617_Fabian_14strainID_BHI2_24h_Co2_A_1000_SG_A2.fcs",
-               "20200618_Fabian_14strainID_MM_48h_Co2_A_100_SG_A8.fcs",
-               "20200617_Fabian_14strainID_BHI2_24h_Co2_B_1000_SG_C2.fcs",
-               "20200618_Fabian_14strainID_MM_48h_Co2_B_100_SG_C7.fcs",
-               "20200617_Fabian_14strainID_BHI2_24h_Co2_C_1000_SG_G1.fcs",
-               "20200618_Fabian_14strainID_BHI2_48h_Co2_A_1000_SG_A2.fcs",
-               "20200618_Fabian_14strainID_MM_48h_Co2_B_100_SG_C7.fcs",
-               "20200618_Fabian_14strainID_BHI2_48h_Co2_B_1000_SG_B2.fcs",
-               "20200618_Fabian_14strainID_BHI2_48h_Co2_C_1000_SG_D1.fcs",
-               "20200617_Fabian_14strainID_MM_24h_Co1_B_100_SG_C6.fcs",
-               "20200617_Fabian_14strainID_MM_24h_Co1_C_100_SG_E6.fcs",
-               "20200618_Fabian_14strainID_BHI2_48h_Co1_A_1000_SG_A1.fcs",
-               "20200618_Fabian_14strainID_BHI2_48h_Co1_B_1000_SG_B1.fcs",
-               "20200617_Fabian_14strainID_BHI2_24h_Co1_A_1000_SG_A1.fcs",
-               "20200617_Fabian_14strainID_BHI2_24h_Co1_B_1000_SG_C1.fcs",
-               "20200617_Fabian_14strainID_BHI2_24h_Co1_C_1000_SG_E1.fcs",
-               "20200618_Fabian_14strainID_BHI2_48h_Co1_C_1000_SG_C1.fcs",
-               "20200618_Fabian_14strainID_MM_48h_Co1_B_100_SG_A7.fcs",
-               "20200618_Fabian_14strainID_MM_48h_Co1_C_100_SG_B7.fcs")
 
+
+########################################################
+# fcs files for co-culture 1 and 2 in MM are selected
 fcs_topre_MM <- c("20200617_Fabian_14strainID_MM_24h_Co2_A_100_SG_A7.fcs",
                "20200617_Fabian_14strainID_MM_24h_Co2_B_100_SG_C7.fcs",
                "20200618_Fabian_14strainID_MM_48h_Co2_A_100_SG_A8.fcs",
@@ -795,35 +960,3 @@ fcs_topre_MM <- c("20200617_Fabian_14strainID_MM_24h_Co2_A_100_SG_A7.fcs",
                "20200618_Fabian_14strainID_MM_48h_Co1_B_100_SG_A7.fcs",
                "20200618_Fabian_14strainID_MM_48h_Co1_C_100_SG_B7.fcs")
 
-flowData_topre_MM <- flowData_transformed_2[fcs_topre_MM]
-
-test_pred_MM <- RandomF_predict(x = Model_RF[[1]], new_data =  flowData_topre_MM, cleanFCS = FALSE)
-
-# fcs files for artificial mixes are selected
-fcs_topre_BHI2_AM <- c("20200512_Fabian_14strainID_BHI2_NA_Mix1_NA_1000_SG_A8.fcs",
-                       "20200512_Fabian_14strainID_BHI2_NA_Mix1_NA_1000_SG_A9.fcs",
-                       "20200512_Fabian_14strainID_BHI2_NA_Mix2_NA_1000_SG_A10.fcs",
-                       "20200512_Fabian_14strainID_BHI2_NA_Mix2_NA_1000_SG_A11.fcs",
-                       "20200512_Fabian_14strainID_BHI2_NA_Mix8_NA_1000_SG_D10.fcs",
-                       "20200512_Fabian_14strainID_BHI2_NA_Mix8_NA_1000_SG_D11.fcs",
-                       "20200512_Fabian_14strainID_BHI2_NA_Mix9_NA_1000_SG_E8.fcs",
-                       "20200512_Fabian_14strainID_BHI2_NA_Mix9_NA_1000_SG_E9.fcs")
-
-flowData_topre_BHI2_AM <- flowData_transformed_gated[fcs_topre_BHI2_AM]
-
-test_pred_BHI2_AM <- RandomF_predict(x = Model_RF_SoFnPg[[1]], new_data =  flowData_topre_BHI2_AM, cleanFCS = FALSE)
-test_pred_BHI2_AM
-
-## Model based on two strains (Fn, So)
-# Select the fcs files based on which the model will be trained --> Fn (replicate C), So (replicate A), Pg (replicate B)
-fcs_names_sofn <- c("20200512_Fabian_14strainID_BHI2_24h_Fn_C_1000_SG_B5.fcs",
-               "20200512_Fabian_14strainID_BHI2_24h_So_A_1000_SG_D1.fcs")
-
-# Sample info has to contain a column called 'name' which matches the sammplenames of the fcs files
-Sample_Info_sb_sofn <- Sample_Info %>% dplyr::filter(name %in% fcs_names_sofn)
-
-Model_RF_sofn <- Phenoflow::RandomF_FCS(flowData_transformed_2[fcs_names_sofn], Sample_Info_sb_sofn, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
-
-# Predict artificial mixes with 2 strain model
-test_pred_BHI2_AM_sofn <- RandomF_predict(x = Model_RF_sofn[[1]], new_data =  flowData_topre_BHI2_AM, cleanFCS = FALSE)
-test_pred_BHI2_AM_sofn
