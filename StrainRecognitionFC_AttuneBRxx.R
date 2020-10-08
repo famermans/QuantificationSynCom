@@ -570,8 +570,8 @@ fcs_names_SoFnPi <- c("20200512_Fabian_14strainID_BHI2_24h_So_A_1000_SG_D1.fcs",
                       "20200512_Fabian_14strainID_BHI2_24h_Fn_C_1000_SG_B5.fcs",
                       "20200512_Fabian_14strainID_BHI2_24h_Pi_A_1000_SG_A1.fcs")
 
-Sample_Info_sb_SoFnPi <- Sample_Info %>% dplyr::filter(name %in% fcs_names_SoFnPi)
-Model_RF_SoFnPi <- Phenoflow::RandomF_FCS(flowData_transformed_gated[fcs_names_SoFnPi], Sample_Info_sb_SoFnPi, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
+Sample_Info_SoFnPi <- Sample_Info %>% dplyr::filter(name %in% fcs_names_SoFnPi)
+Model_RF_SoFnPi <- Phenoflow::RandomF_FCS(flowData_transformed_gated[fcs_names_SoFnPi], Sample_Info_SoFnPi, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
 
 
 ### Model for So, Fn, Pg and Vp
@@ -936,8 +936,68 @@ test_pred_BHI2_SoSsalSsanSmiSgVpAvAnAaFnPgPiSmuSsob <- test_pred_BHI2_SoSsalSsan
 write.csv2(file = "PredictedCellsSoSsalSsanSmiSgVpAvAnAaFnPgPiSmuSsob.csv", test_pred_BHI2_SoSsalSsanSmiSgVpAvAnAaFnPgPiSmuSsob)
 
 
+#### Some tests with training with replicates ----
+### Model for So, Fn and Pg in BHI2
+# Select the fcs files based on which the model will be trained --> So, Fn, Pg grown in BHI2
+fcs_names_SoFnPg2 <- c("20200512_Fabian_14strainID_BHI2_24h_So_A_1000_SG_D1.fcs",
+                       "20200512_Fabian_14strainID_BHI2_24h_So_A_1000_SG_D2.fcs",
+                       "20200512_Fabian_14strainID_BHI2_24h_So_B_1000_SG_D3.fcs",
+                       "20200512_Fabian_14strainID_BHI2_24h_So_B_1000_SG_D4.fcs",
+                       "20200512_Fabian_14strainID_BHI2_24h_So_C_1000_SG_D5.fcs",
+                       "20200512_Fabian_14strainID_BHI2_24h_So_C_1000_SG_D6.fcs",
+                       "20200512_Fabian_14strainID_BHI2_24h_Fn_A_1000_SG_B1.fcs",
+                       "20200512_Fabian_14strainID_BHI2_24h_Fn_A_1000_SG_B2.fcs",
+                       "20200512_Fabian_14strainID_BHI2_24h_Fn_B_1000_SG_B3.fcs",
+                       "20200512_Fabian_14strainID_BHI2_24h_Fn_B_1000_SG_B4.fcs",
+                       "20200512_Fabian_14strainID_BHI2_24h_Fn_C_1000_SG_B5.fcs",
+                       "20200512_Fabian_14strainID_BHI2_24h_Fn_C_1000_SG_B6.fcs",
+                       "20200512_Fabian_14strainID_BHI2_24h_Pg_A_1000_SG_E7.fcs",
+                       "20200512_Fabian_14strainID_BHI2_24h_Pg_A_1000_SG_E8.fcs",
+                       "20200512_Fabian_14strainID_BHI2_24h_Pg_B_1000_SG_E9.fcs",
+                       "20200512_Fabian_14strainID_BHI2_24h_Pg_B_1000_SG_E10.fcs",
+                       "20200512_Fabian_14strainID_BHI2_24h_Pg_C_1000_SG_E11.fcs",
+                       "20200512_Fabian_14strainID_BHI2_24h_Pg_C_1000_SG_E12.fcs")
+
+Sample_Info_SoFnPg2 <- Sample_Info %>% dplyr::filter(name %in% fcs_names_SoFnPg2)
+
+# If samples have a lower count than the 'downsample' argument, these samples will be left out and you get over/under representation of certain strains
+Model_RF_SoFnPg2 <- Phenoflow::RandomF_FCS(flowData_transformed_gated[fcs_names_SoFnPg2], Sample_Info_SoFnPg2, target_label = "Strain", downsample = 7957, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
 
 
+## Alternative approach for dealing with this over/under representation: using FSC_pool
+# Select the fcs files based on which the model will be trained --> So, Fn, Pg grown in BHI2
+flowData_transformed_test <- flowData_transformed_gated
+
+flowData_pooled <- FCS_pool(x = flowData_transformed_test,
+                            stub = c("20200512_Fabian_14strainID_BHI2_24h_So*",
+                                     "20200512_Fabian_14strainID_BHI2_24h_Fn*",
+                                     "20200512_Fabian_14strainID_BHI2_24h_Pg*"))
+
+metadata_pooled <- data.frame(do.call(rbind, lapply(strsplit(flowCore::sampleNames(flowData_pooled), "_"), rbind)))
+colnames(metadata_pooled) <- c("Date", "Experimenter", "ExperimentID", "Medium", "Timepoint", "Strain")
+
+name_pooled <- flowCore::sampleNames(flowData_pooled)
+Sample_Info_pooled <- cbind(name_pooled, metadata_pooled)
+
+
+xyplot(`BL3-A`~`BL1-A`, data = flowData_pooled[c(1:3)],
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(0, 16))),
+       axis = axis.default, nbin = 125, main = "Test pooled samples", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+cells2 <- flowCore::filter(flowData_pooled, polyGate5)
+TotalCount2 <- summary(cells2)
+TotalCount2 <- toTable(TotalCount2)
+
+
+fcs_names_SoFnPg3 <- c("20200512_Fabian_14strainID_BHI2_24h_So*",
+                       "20200512_Fabian_14strainID_BHI2_24h_Fn*",
+                       "20200512_Fabian_14strainID_BHI2_24h_Pg*")
+
+Sample_Info_SoFnPg3 <- Sample_Info_pooled %>% dplyr::filter(name_pooled %in% fcs_names_SoFnPg3)
+
+Model_RF_SoFnPg3 <- Phenoflow::RandomF_FCS(flowData_pooled[fcs_names_SoFnPg3], Sample_Info_SoFnPg3, sample_col = "name_pooled", target_label = "Strain", downsample = 50000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
 
 
 
