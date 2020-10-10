@@ -172,28 +172,28 @@ test_pred_SoFn <- left_join(test_pred_SoFn, vol, by = c("Sample" = "Sample_names
 test_pred_SoFn <- test_pred_SoFn %>% 
   mutate(Concentration = Counts/Volume)
 # Produce csv files with concentrations
-write.csv2(file="PredictedCells_SoFn.csv", test_pred_SoFn)
+write.csv2(file = "PredictedCells_SoFn.csv", test_pred_SoFn)
 
 
 ### Build random forest for So, Fn and Pi
 fcs_names_SoFnPi <- c("So_10_3_20191015_160057.fcs",
-                    "Fn_10_3_20191015_161647.fcs",
-                    "Pi_10_3_20191015_161828.fcs")
+                      "Fn_10_3_20191015_161647.fcs",
+                      "Pi_10_3_20191015_161828.fcs")
 Sample_Info_SoFnPi <- Sample_Info %>% dplyr::filter(name %in% fcs_names_SoFnPi)
 
 Model_RF_SoFnPi <- Phenoflow::RandomF_FCS(flowData_transformed_gated[fcs_names_SoFnPi], Sample_Info_SoFnPi, target_label = "Strains", downsample = 10000, classification_type = "sample", param = param , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
 
 ## Make predictions for relevant mixtures and co-cultures
 fcs_topre_SoFnPi <- c("Fn_10_3_20191017_145607.fcs",
-                    "So_10_3_20191017_143923.fcs",
-                    "Pi_10_3_20191017_145747.fcs",
-                    "So_Fn_10_3_20191015_162124.fcs",
-                    "So_Fn_Pi_10_3_20191015_162306.fcs",
-                    "So_Fn_Pi_Vp_10_3_20191015_162448.fcs",
-                    "1_10_3_20191016_141301.fcs",
-                    "1_10_3_20191017_143044.fcs",
-                    "2_10_3_20191016_141435.fcs",
-                    "2_10_3_20191017_143159.fcs")
+                      "So_10_3_20191017_143923.fcs",
+                      "Pi_10_3_20191017_145747.fcs",
+                      "So_Fn_10_3_20191015_162124.fcs",
+                      "So_Fn_Pi_10_3_20191015_162306.fcs",
+                      "So_Fn_Pi_Vp_10_3_20191015_162448.fcs",
+                      "1_10_3_20191016_141301.fcs",
+                      "1_10_3_20191017_143044.fcs",
+                      "2_10_3_20191016_141435.fcs",
+                      "2_10_3_20191017_143159.fcs")
 flowData_topre_SoFnPi <- flowData_transformed_gated[fcs_topre_SoFnPi]
 
 test_pred_SoFnPi <- RandomF_predict(x = Model_RF_SoFnPi[[1]], new_data = flowData_topre_SoFnPi, cleanFCS = FALSE)
@@ -205,32 +205,32 @@ test_pred_SoFnPi <- left_join(test_pred_SoFnPi, vol, by = c("Sample" = "Sample_n
 test_pred_SoFnPi <- test_pred_SoFnPi %>% 
   mutate(Concentration = Counts/Volume)
 # Produce csv files with concentrations
-write.csv2(file="PredictedCells_SoFnPi.csv", test_pred_SoFnPi)
+write.csv2(file = "PredictedCells_SoFnPi.csv", test_pred_SoFnPi)
 
 
 ### Build random forest for So, Fn, Pi and Vp
 fcs_names_SoFnPiVp <- c("So_10_3_20191015_160057.fcs",
-                      "Fn_10_3_20191015_161647.fcs",
-                      "Pi_10_3_20191015_161828.fcs",
-                      "Vp_10_3_20191015_161144.fcs")
+                        "Fn_10_3_20191015_161647.fcs",
+                        "Pi_10_3_20191015_161828.fcs",
+                        "Vp_10_3_20191015_161144.fcs")
 Sample_Info_SoFnPiVp <- Sample_Info %>% dplyr::filter(name %in% fcs_names_SoFnPiVp)
 
 Model_RF_SoFnPiVp <- Phenoflow::RandomF_FCS(flowData_transformed_gated[fcs_names_SoFnPiVp], Sample_Info_SoFnPiVp, target_label = "Strains", downsample = 10000, classification_type = "sample", param = param , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
 
 ## Make predictions for relevant mixtures and co-cultures
 fcs_topre_SoFnPiVp <- c("Fn_10_3_20191017_145607.fcs",
-                      "So_10_3_20191017_143923.fcs",
-                      "Pi_10_3_20191017_145747.fcs",
-                      "Vp_10_3_20191017_145142.fcs",
-                      "So_Fn_10_3_20191015_162124.fcs",
-                      "So_Fn_Pi_10_3_20191015_162306.fcs",
-                      "So_Fn_Pi_Vp_10_3_20191015_162448.fcs",
-                      "1_10_3_20191016_141301.fcs",
-                      "1_10_3_20191017_143044.fcs",
-                      "2_10_3_20191016_141435.fcs",
-                      "2_10_3_20191017_143159.fcs",
-                      "3_10_3_20191016_141617.fcs",
-                      "3_10_3_20191017_143340.fcs")
+                        "So_10_3_20191017_143923.fcs",
+                        "Pi_10_3_20191017_145747.fcs",
+                        "Vp_10_3_20191017_145142.fcs",
+                        "So_Fn_10_3_20191015_162124.fcs",
+                        "So_Fn_Pi_10_3_20191015_162306.fcs",
+                        "So_Fn_Pi_Vp_10_3_20191015_162448.fcs",
+                        "1_10_3_20191016_141301.fcs",
+                        "1_10_3_20191017_143044.fcs",
+                        "2_10_3_20191016_141435.fcs",
+                        "2_10_3_20191017_143159.fcs",
+                        "3_10_3_20191016_141617.fcs",
+                        "3_10_3_20191017_143340.fcs")
 flowData_topre_SoFnPiVp <- flowData_transformed_gated[fcs_topre_SoFnPiVp]
 
 test_pred_SoFnPiVp <- RandomF_predict(x = Model_RF_SoFnPiVp[[1]], new_data = flowData_topre_SoFnPiVp, cleanFCS = FALSE)
@@ -242,51 +242,51 @@ test_pred_SoFnPiVp <- left_join(test_pred_SoFnPiVp, vol, by = c("Sample" = "Samp
 test_pred_SoFnPiVp <- test_pred_SoFnPiVp %>% 
   mutate(Concentration = Counts/Volume)
 # Produce csv files with concentrations
-write.csv2(file="PredictedCells_SoFnPiVp.csv", test_pred_SoFnPiVp)
+write.csv2(file = "PredictedCells_SoFnPiVp.csv", test_pred_SoFnPiVp)
 
 
-### Build random forest for So, Ssan, Ssal, Vp, Av, An
-fcs_names_SoSsanSsalVpAvAn <- c("So_10_3_20191015_160057.fcs",
-                                "Ssan_10_3_20191015_160415.fcs",
-                                "Ssal_10_3_20191015_160238.fcs",
-                                "Vp_10_3_20191015_161144.fcs",
-                                "Av_10_3_20191015_161506.fcs",
-                                "An_10_3_20191015_161325.fcs")
-Sample_Info_SoSsanSsalVpAvAn <- Sample_Info %>% dplyr::filter(name %in% fcs_names_SoSsanSsalVpAvAn)
-
-Model_RF_SoSsanSsalVpAvAn <- Phenoflow::RandomF_FCS(flowData_transformed_gated[fcs_names_SoSsanSsalVpAvAn], Sample_Info_SoSsanSsalVpAvAn, target_label = "Strains", downsample = 10000, classification_type = "sample", param = param , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
-
-## Make predictions for relevant mixtures and co-cultures
-fcs_topre_SoSsanSsalVpAvAn <- c("So_10_3_20191017_143923.fcs",
-                                "Ssan_10_3_20191017_144300.fcs",
-                                "Ssal_10_3_20191017_144126.fcs",
-                                "Vp_10_3_20191017_145142.fcs",
-                                "Av_10_3_20191017_145406.fcs",
-                                "4_10_3_20191016_141808.fcs",
-                                "4_10_3_20191017_143513.fcs")
-flowData_topre_SoSsanSsalVpAvAn <- flowData_transformed_gated[fcs_topre_SoSsanSsalVpAvAn]
-
-test_pred_SoSsanSsalVpAvAn <- RandomF_predict(x = Model_RF_SoSsanSsalVpAvAn[[1]], new_data = flowData_topre_SoSsanSsalVpAvAn, cleanFCS = FALSE)
-test_pred_SoSsanSsalVpAvAn
-
-## Export predictions
-# Convert predictions to concentrations
-test_pred_SoSsanSsalVpAvAn <- left_join(test_pred_SoSsanSsalVpAvAn, vol, by = c("Sample" = "Sample_names"))
-test_pred_SoSsanSsalVpAvAn <- test_pred_SoSsanSsalVpAvAn %>% 
-  mutate(Concentration = Counts/Volume)
-# Produce csv files with concentrations
-write.csv2(file="PredictedCells_SoSsanSsalVpAvAn.csv", test_pred_SoSsanSsalVpAvAn)
+# ### Build random forest for So, Ssan, Ssal, Vp, Av, An
+# fcs_names_SoSsanSsalVpAvAn <- c("So_10_3_20191015_160057.fcs",
+#                                 "Ssan_10_3_20191015_160415.fcs",
+#                                 "Ssal_10_3_20191015_160238.fcs",
+#                                 "Vp_10_3_20191015_161144.fcs",
+#                                 "Av_10_3_20191015_161506.fcs",
+#                                 "An_10_3_20191015_161325.fcs")
+# Sample_Info_SoSsanSsalVpAvAn <- Sample_Info %>% dplyr::filter(name %in% fcs_names_SoSsanSsalVpAvAn)
+# 
+# Model_RF_SoSsanSsalVpAvAn <- Phenoflow::RandomF_FCS(flowData_transformed_gated[fcs_names_SoSsanSsalVpAvAn], Sample_Info_SoSsanSsalVpAvAn, target_label = "Strains", downsample = 10000, classification_type = "sample", param = param , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
+# 
+# ## Make predictions for relevant mixtures and co-cultures
+# fcs_topre_SoSsanSsalVpAvAn <- c("So_10_3_20191017_143923.fcs",
+#                                 "Ssan_10_3_20191017_144300.fcs",
+#                                 "Ssal_10_3_20191017_144126.fcs",
+#                                 "Vp_10_3_20191017_145142.fcs",
+#                                 "Av_10_3_20191017_145406.fcs",
+#                                 "4_10_3_20191016_141808.fcs",
+#                                 "4_10_3_20191017_143513.fcs")
+# flowData_topre_SoSsanSsalVpAvAn <- flowData_transformed_gated[fcs_topre_SoSsanSsalVpAvAn]
+# 
+# test_pred_SoSsanSsalVpAvAn <- RandomF_predict(x = Model_RF_SoSsanSsalVpAvAn[[1]], new_data = flowData_topre_SoSsanSsalVpAvAn, cleanFCS = FALSE)
+# test_pred_SoSsanSsalVpAvAn
+# 
+# ## Export predictions
+# # Convert predictions to concentrations
+# test_pred_SoSsanSsalVpAvAn <- left_join(test_pred_SoSsanSsalVpAvAn, vol, by = c("Sample" = "Sample_names"))
+# test_pred_SoSsanSsalVpAvAn <- test_pred_SoSsanSsalVpAvAn %>% 
+#   mutate(Concentration = Counts/Volume)
+# # Produce csv files with concentrations
+# write.csv2(file = "PredictedCells_SoSsanSsalVpAvAn.csv", test_pred_SoSsanSsalVpAvAn)
 
 
 ### Build random forest for So, Ssan, Ssal, Vp, Av, An, Smi, Sg
 fcs_names_SoSsanSsalVpAvAnSmiSg <- c("So_10_3_20191015_160057.fcs",
-                                "Ssan_10_3_20191015_160415.fcs",
-                                "Ssal_10_3_20191015_160238.fcs",
-                                "Vp_10_3_20191015_161144.fcs",
-                                "Av_10_3_20191015_161506.fcs",
-                                "An_10_3_20191015_161325.fcs",
-                                "Smi_10_3_20191015_160639.fcs",
-                                "Sg_10_3_20191015_160531.fcs")
+                                     "Ssan_10_3_20191015_160415.fcs",
+                                     "Ssal_10_3_20191015_160238.fcs",
+                                     "Vp_10_3_20191015_161144.fcs",
+                                     "Av_10_3_20191015_161506.fcs",
+                                     "An_10_3_20191015_161325.fcs",
+                                     "Smi_10_3_20191015_160639.fcs",
+                                     "Sg_10_3_20191015_160531.fcs")
 Sample_Info_SoSsanSsalVpAvAnSmiSg <- Sample_Info %>% dplyr::filter(name %in% fcs_names_SoSsanSsalVpAvAnSmiSg)
 
 Model_RF_SoSsanSsalVpAvAnSmiSg <- Phenoflow::RandomF_FCS(flowData_transformed_gated[fcs_names_SoSsanSsalVpAvAnSmiSg], Sample_Info_SoSsanSsalVpAvAnSmiSg, target_label = "Strains", downsample = 10000, classification_type = "sample", param = param , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
@@ -312,7 +312,7 @@ test_pred_SoSsanSsalVpAvAnSmiSg <- left_join(test_pred_SoSsanSsalVpAvAnSmiSg, vo
 test_pred_SoSsanSsalVpAvAnSmiSg <- test_pred_SoSsanSsalVpAvAnSmiSg %>% 
   mutate(Concentration = Counts/Volume)
 # Produce csv files with concentrations
-write.csv2(file="PredictedCells_SoSsanSsalVpAvAn.csv", test_pred_SoSsanSsalVpAvAnSmiSg)
+write.csv2(file = "PredictedCells_SoSsanSsalVpAvAnSmiSg.csv", test_pred_SoSsanSsalVpAvAnSmiSg)
 
 
 ### Build random forest for Smu, Ssob, Fn, Pi, Aa
@@ -344,12 +344,13 @@ test_pred_SmuSsobFnPiAa <- left_join(test_pred_SmuSsobFnPiAa, vol, by = c("Sampl
 test_pred_SmuSsobFnPiAa <- test_pred_SmuSsobFnPiAa %>% 
   mutate(Concentration = Counts/Volume)
 # Produce csv files with concentrations
-write.csv2(file="PredictedCells_SmuSsobFnPiAa.csv", test_pred_SmuSsobFnPiAa)
+write.csv2(file = "PredictedCells_SmuSsobFnPiAa.csv", test_pred_SmuSsobFnPiAa)
 
 
 ### Build random forest for all strains
 fcs_names_all <- c("Aa_10_3_20191015_161944.fcs",
                    "Av_10_3_20191015_161506.fcs",
+                   "An_10_3_20191015_161325.fcs",
                    "Fn_10_3_20191015_161647.fcs",
                    "Pi_10_3_20191015_161828.fcs",
                    "Sg_10_3_20191015_160531.fcs",
@@ -377,6 +378,7 @@ fcs_topre_all <- c("So_10_3_20191017_143923.fcs",
                    "Fn_10_3_20191017_145607.fcs",
                    "Pi_10_3_20191017_145747.fcs",
                    "Aa_10_3_20191017_145853.fcs",
+                   "All_10_3_20191015_162624.fcs",
                    "1_10_3_20191016_141301.fcs",
                    "1_10_3_20191017_143044.fcs",
                    "2_10_3_20191016_141435.fcs",
@@ -389,6 +391,7 @@ fcs_topre_all <- c("So_10_3_20191017_143923.fcs",
                    "5_10_3_20191017_143645.fcs",
                    "6_10_3_20191016_142112.fcs",
                    "6_10_3_20191017_143749.fcs")
+
 flowData_topre_all <- flowData_transformed_gated[fcs_topre_all]
 
 test_pred_all <- RandomF_predict(x = Model_RF_all[[1]], new_data = flowData_topre_all, cleanFCS = FALSE)
@@ -400,7 +403,7 @@ test_pred_all <- left_join(test_pred_all, vol, by = c("Sample" = "Sample_names")
 test_pred_all <- test_pred_all %>% 
   mutate(Concentration = Counts/Volume)
 # Produce csv files with concentrations
-write.csv2(file="PredictedCells_all.csv", test_pred_all)
+write.csv2(file = "PredictedCells_all.csv", test_pred_all)
 
 
 
