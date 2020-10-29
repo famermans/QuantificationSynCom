@@ -77,7 +77,7 @@ data <- merge(mocks_qPCR, csv_counts, by = "Sample_Name")
 ## Melting data frame
 melted <- melt(data, "Sample_Name")
 
-## Create new column in melted data frame with category (= qPCR or flow cytometry)
+## Create new column in melted data frame with category (= qPCR or calculation based on FCM)
 melted$cat <- ''
 
 melted[melted$variable == 'qPCR_So', ]$cat <- "qPCR"
@@ -85,10 +85,10 @@ melted[melted$variable == 'qPCR_Fn', ]$cat <- "qPCR"
 melted[melted$variable == 'qPCR_Pg', ]$cat <- "qPCR"
 melted[melted$variable == 'qPCR_Vp', ]$cat <- "qPCR"
 
-melted[melted$variable == 'FCM_So', ]$cat <- "FCM"
-melted[melted$variable == 'FCM_Fn', ]$cat <- "FCM"
-melted[melted$variable == 'FCM_Pg', ]$cat <- "FCM"
-melted[melted$variable == 'FCM_Vp', ]$cat <- "FCM"
+melted[melted$variable == 'FCM_So', ]$cat <- "calc"
+melted[melted$variable == 'FCM_Fn', ]$cat <- "calc"
+melted[melted$variable == 'FCM_Pg', ]$cat <- "calc"
+melted[melted$variable == 'FCM_Vp', ]$cat <- "calc"
 
 ## Create new column in melted dataframe with species name
 melted$species <- ''
@@ -114,19 +114,20 @@ plot1 <- ggplot(data = melted, aes(x = cat, y = concentration, fill = species))+
   geom_bar(stat = 'identity', position = 'stack')+
   theme_bw()+
   facet_grid(~ Sample_Name)+
-  labs(title = "FCM vs qPCR mocks",
+  labs(title = "Theoretical vs qPCR mocks",
        x = "Technique",
-       y = "Cell concentration (cells/mL)")
+       y = "Cell concentration (cells/mL)",
+       fill = "Species")
 
 print(plot1)
 
+plot2 <- ggplot(data = melted, aes(x = cat, y = concentration, fill = species))+
+  geom_bar(stat = 'identity', position = 'fill')+
+  theme_bw()+
+  facet_grid(~ Sample_Name)+
+  labs(title = "Theoretical vs qPCR mocks",
+       x = "Technique",
+       y = "Relative abundance",
+       fill = "Species")
 
-
-
-
-
-
-
-
-
-
+print(plot2)
