@@ -85,10 +85,10 @@ melted[melted$variable == 'qPCR_Fn', ]$cat <- "qPCR"
 melted[melted$variable == 'qPCR_Pg', ]$cat <- "qPCR"
 melted[melted$variable == 'qPCR_Vp', ]$cat <- "qPCR"
 
-melted[melted$variable == 'FCM_So', ]$cat <- "calc"
-melted[melted$variable == 'FCM_Fn', ]$cat <- "calc"
-melted[melted$variable == 'FCM_Pg', ]$cat <- "calc"
-melted[melted$variable == 'FCM_Vp', ]$cat <- "calc"
+melted[melted$variable == 'FCM_So', ]$cat <- "FCM"
+melted[melted$variable == 'FCM_Fn', ]$cat <- "FCM"
+melted[melted$variable == 'FCM_Pg', ]$cat <- "FCM"
+melted[melted$variable == 'FCM_Vp', ]$cat <- "FCM"
 
 ## Create new column in melted dataframe with species name
 melted$species <- ''
