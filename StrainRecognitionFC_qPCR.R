@@ -39,7 +39,8 @@ CopyNumber_Pg <- 4
 CopyNumber_Vp <- 4
 
 ## Parameters relevant for calculations
-Volume <- 1               # mL
+Volume_BHI2 <- 0.75       # mL
+Volume_MM <- 1            # mL
 Dilution <- 10
 VolumeDNA <- 25           # µL
 
@@ -54,15 +55,30 @@ mocks <- data.frame(Sample_Name = csv_mocks$Sample_Name,
                     Cells_Vp = csv_mocks$Quantity_Mean_Vp/CopyNumber_Vp,
                     CellsSD_Vp = csv_mocks$Quantity_SD_Vp/CopyNumber_Vp)
 
-mocks_concentration <- data.frame(Sample_Name = mocks$Sample_Name,
-                                  Concentration_So = mocks$Cells_So*(Dilution*VolumeDNA/Volume),
-                                  ConcentrationSD_So = mocks$CellsSD_So*(Dilution*VolumeDNA/Volume),
-                                  Concentration_Fn = mocks$Cells_Fn*(Dilution*VolumeDNA/Volume),
-                                  ConcentrationSD_Fn = mocks$CellsSD_Fn*(Dilution*VolumeDNA/Volume),
-                                  Concentration_Pg = mocks$Cells_Pg*(Dilution*VolumeDNA/Volume),
-                                  ConcentrationSD_Pg = mocks$CellsSD_Pg*(Dilution*VolumeDNA/Volume),
-                                  Concentration_Vp = mocks$Cells_Vp*(Dilution*VolumeDNA/Volume),
-                                  ConcentrationSD_Vp = mocks$CellsSD_Vp*(Dilution*VolumeDNA/Volume))
+mocks_BHI2 <- mocks[1:5, ]
+mocks_MM <- mocks[6:10, ]
+
+mocks_concentration_BHI2 <- data.frame(Sample_Name = mocks_BHI2$Sample_Name,
+                                   Concentration_So = mocks_BHI2$Cells_So*(Dilution*VolumeDNA/Volume_BHI2),
+                                   ConcentrationSD_So = mocks_BHI2$CellsSD_So*(Dilution*VolumeDNA/Volume_BHI2),
+                                   Concentration_Fn = mocks_BHI2$Cells_Fn*(Dilution*VolumeDNA/Volume_BHI2),
+                                   ConcentrationSD_Fn = mocks_BHI2$CellsSD_Fn*(Dilution*VolumeDNA/Volume_BHI2),
+                                   Concentration_Pg = mocks_BHI2$Cells_Pg*(Dilution*VolumeDNA/Volume_BHI2),
+                                   ConcentrationSD_Pg = mocks_BHI2$CellsSD_Pg*(Dilution*VolumeDNA/Volume_BHI2),
+                                   Concentration_Vp = mocks_BHI2$Cells_Vp*(Dilution*VolumeDNA/Volume_BHI2),
+                                   ConcentrationSD_Vp = mocks_BHI2$CellsSD_Vp*(Dilution*VolumeDNA/Volume_BHI2))
+
+mocks_concentration_MM <- data.frame(Sample_Name = mocks_MM$Sample_Name,
+                                  Concentration_So = mocks_MM$Cells_So*(Dilution*VolumeDNA/Volume_MM),
+                                  ConcentrationSD_So = mocks_MM$CellsSD_So*(Dilution*VolumeDNA/Volume_MM),
+                                  Concentration_Fn = mocks_MM$Cells_Fn*(Dilution*VolumeDNA/Volume_MM),
+                                  ConcentrationSD_Fn = mocks_MM$CellsSD_Fn*(Dilution*VolumeDNA/Volume_MM),
+                                  Concentration_Pg = mocks_MM$Cells_Pg*(Dilution*VolumeDNA/Volume_MM),
+                                  ConcentrationSD_Pg = mocks_MM$CellsSD_Pg*(Dilution*VolumeDNA/Volume_MM),
+                                  Concentration_Vp = mocks_MM$Cells_Vp*(Dilution*VolumeDNA/Volume_MM),
+                                  ConcentrationSD_Vp = mocks_MM$CellsSD_Vp*(Dilution*VolumeDNA/Volume_MM))
+
+mocks_concentration <- rbind(mocks_concentration_BHI2, mocks_concentration_MM)
 
 mocks_qPCR <- data.frame(Sample_Name = mocks_concentration$Sample_Name,
                          qPCR_So = mocks_concentration$Concentration_So,
