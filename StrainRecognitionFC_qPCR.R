@@ -43,6 +43,8 @@ Volume_BHI2 <- 0.75       # mL
 Volume_MM <- 1            # mL
 Dilution <- 10
 VolumeDNA <- 25           # µL
+# I'm in doubt whether division by VolumeqPCR should be performed, as it is also done for the standard...
+#VolumeqPCR <- 5           # µL
 
 ### Calculating cell concentrations based on copy numbers from qPCR
 mocks <- data.frame(Sample_Name = csv_mocks$Sample_Name,
