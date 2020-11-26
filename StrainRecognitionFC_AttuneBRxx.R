@@ -21,6 +21,7 @@ library("cowplot")
 library("reshape2")
 library("dplyr")
 library("tidyverse")
+library("ggcyto")
 
 set.seed(777)
 
@@ -157,10 +158,10 @@ xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(697:729)],
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
 
 ## Singlets
-p_singlets <- xyplot(`BL1-H`~`BL1-A`, data = flowData_transformed[c(1:729)],
+p_singlets <- xyplot(`BL1-H`~`BL1-W`, data = flowData_transformed[c(1:729)],
        scales = list(y = list(limits = c(0, 16)),
                      x = list(limits = c(0,16))),
-       axix = axis.default, nbin = 125, main = "QC singlets (BL1-A ~ BL1-H)", xlab = "BL1-A", ylab = "BL1-H",
+       axix = axis.default, nbin = 125, main = "QC singlets (BL1-A ~ BL1-W)", xlab = "BL1-W", ylab = "BL1-H",
        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = F)
 
 
@@ -331,6 +332,108 @@ xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed_sel, filter = polyGate5,
 
 ### Subsetting dataset
 flowData_transformed_gated <- Subset(flowData_transformed, polyGate5)
+
+### Singlet analysis pure cultures
+p_singlets_pure_FSC <- xyplot(`FSC-W`~`FSC-H`, data = flowData_transformed_gated[c(1, 7, 13, 19, 21, 23, 29, 31, 37, 43, 49, 55, 61, 67, 73, 79, 85)],
+                              scales = list(y = list(limits = c(0, 10)),
+                                            x = list(limits = c(5, 16))),
+                              axis = axis.default, nbin = 125, main = "Singlet analysis pure cultures FSC", xlab = "FSC-H", ylab = "FSC-W",
+                              par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+p_singlets_pure_SSC <- xyplot(`SSC-W`~`SSC-H`, data = flowData_transformed_gated[c(1, 7, 13, 19, 21, 23, 29, 31, 37, 43, 49, 55, 61, 67, 73, 79, 85)],
+                              scales = list(y = list(limits = c(0, 10)),
+                                            x = list(limits = c(5, 16))),
+                              axis = axis.default, nbin = 125, main = "Singlet analysis pure cultures SSC", xlab = "SSC-H", ylab = "SSC-W",
+                              par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+print(p_singlets_pure_FSC)
+print(p_singlets_pure_SSC)
+
+
+p_singlets_pure_FSC_A <- xyplot(`FSC-A`~`FSC-H`, data = flowData_transformed_gated[c(1, 7, 13, 19, 21, 23, 29, 31, 37, 43, 49, 55, 61, 67, 73, 79, 85)],
+                                scales = list(y = list(limits = c(0, 16)),
+                                              x = list(limits = c(5, 16))),
+                                axis = axis.default, nbin = 125, main = "Singlet analysis pure cultures FSC", xlab = "FSC-H", ylab = "FSC-A",
+                                par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+p_singlets_pure_SSC_A <- xyplot(`SSC-A`~`SSC-H`, data = flowData_transformed_gated[c(1, 7, 13, 19, 21, 23, 29, 31, 37, 43, 49, 55, 61, 67, 73, 79, 85)],
+                                scales = list(y = list(limits = c(0, 16)),
+                                              x = list(limits = c(5, 16))),
+                                axis = axis.default, nbin = 125, main = "Singlet analysis pure cultures SSC", xlab = "SSC-H", ylab = "SSC-A",
+                                par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+print(p_singlets_pure_FSC_A)
+print(p_singlets_pure_SSC_A)
+
+xyplot(`SSC-A`~`BL1-A`, data = flowData_transformed_gated[c(19, 21)],
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(5, 16))),
+       axis = axis.default, nbin = 125, main = "Check blancs", xlab = "BL1-A", ylab = "SSC-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed_gated[c(19, 21)],
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(5, 16))),
+       axis = axis.default, nbin = 125, main = "Check blancs", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed[c(19, 21)],
+       scales = list(y = list(limits = c(0, 16)),
+                     x = list(limits = c(5, 16))),
+       axis = axis.default, nbin = 125, main = "Check blancs", xlab = "BL1-A", ylab = "BL3-A",
+       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+# Use none gated data
+p_singlets_pure_FSC_NG <- xyplot(`FSC-W`~`FSC-H`, data = flowData_transformed[c(1, 7, 13, 19, 21, 23, 29, 31, 37, 43, 49, 55, 61, 67, 73, 79, 85)],
+                                 scales = list(y = list(limits = c(0, 10)),
+                                               x = list(limits = c(5, 16))),
+                                 axis = axis.default, nbin = 125, main = "Singlet analysis pure cultures FSC", xlab = "FSC-H", ylab = "FSC-W",
+                                 par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+p_singlets_pure_SSC_NG <- xyplot(`SSC-W`~`SSC-H`, data = flowData_transformed[c(1, 7, 13, 19, 21, 23, 29, 31, 37, 43, 49, 55, 61, 67, 73, 79, 85)],
+                                 scales = list(y = list(limits = c(0, 10)),
+                                               x = list(limits = c(5, 16))),
+                                 axis = axis.default, nbin = 125, main = "Singlet analysis pure cultures SSC", xlab = "SSC-H", ylab = "SSC-W",
+                                 par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+print(p_singlets_pure_FSC_NG)
+print(p_singlets_pure_SSC_NG)
+
+
+p_singlets_pure_FSC_A_NG <- xyplot(`FSC-A`~`FSC-H`, data = flowData_transformed[c(1, 7, 13, 19, 21, 23, 29, 31, 37, 43, 49, 55, 61, 67, 73, 79, 85)],
+                                   scales = list(y = list(limits = c(0, 16)),
+                                                 x = list(limits = c(5, 16))),
+                                   axis = axis.default, nbin = 125, main = "Singlet analysis pure cultures FSC", xlab = "FSC-H", ylab = "FSC-A",
+                                   par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+p_singlets_pure_SSC_A_NG <- xyplot(`SSC-A`~`SSC-H`, data = flowData_transformed[c(1, 7, 13, 19, 21, 23, 29, 31, 37, 43, 49, 55, 61, 67, 73, 79, 85)],
+                                   scales = list(y = list(limits = c(0, 16)),
+                                                 x = list(limits = c(5, 16))),
+                                   axis = axis.default, nbin = 125, main = "Singlet analysis pure cultures SSC", xlab = "SSC-H", ylab = "SSC-A",
+                                   par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+print(p_singlets_pure_FSC_A_NG)
+print(p_singlets_pure_SSC_A_NG)
+
+## Density plots
+
+p_density_SSC_W <- autoplot(flowData_transformed_gated[c(1, 7, 13, 19, 21, 23, 29, 31, 37, 43, 49, 55, 61, 67, 73, 79, 85)], "SSC-W")+
+        labs(title = "Density plot SSC-W",
+             x = "SSC-W",
+             y = "Density")
+print(p_density_SSC_W)
+
+# p_density_SSC_A <- autoplot(flowData_transformed_gated[c(1, 7, 13, 19, 21, 23, 29, 31, 37, 43, 49, 55, 61, 67, 73, 79, 85)], "SSC-A")+
+#         labs(title = "Density plot SSC-A",
+#              x = "SSC-A",
+#              y = "Density")
+# print(p_density_SSC_A)
+# 
+# p_density_SSC_H <- autoplot(flowData_transformed_gated[c(1, 7, 13, 19, 21, 23, 29, 31, 37, 43, 49, 55, 61, 67, 73, 79, 85)], "SSC-H")+
+#         labs(title = "Density plot SSC-H",
+#              x = "SSC-H",
+#              y = "Density")
+# print(p_density_SSC_H)
 
 
 #### Cell concentrations ----
