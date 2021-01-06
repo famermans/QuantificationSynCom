@@ -127,6 +127,9 @@ melted[melted$variable == 'FCM_Vp', ]$species <- "Vp"
 melted <- melted %>% 
   dplyr::rename(concentration = value)
 
+## Export to csv
+#write.csv2(file = "qPCR_RF_mocks.csv", melted)
+
 ### Visualization
 plot1 <- ggplot(data = melted, aes(x = cat, y = concentration, fill = species))+
   geom_bar(stat = 'identity', position = 'stack')+
