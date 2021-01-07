@@ -152,3 +152,17 @@ plot2 <- ggplot(data = melted, aes(x = cat, y = concentration, fill = species))+
        fill = "Species")
 
 print(plot2)
+
+plot3 <- ggplot(data = melted, aes(x = cat, y = concentration, fill = species))+
+  geom_bar(stat = 'identity', position = 'dodge')+
+  theme_bw()+
+  facet_grid(~ Sample_Name)+
+  labs(title = "Theoretical vs qPCR mocks",
+       x = "Technique",
+       y = "Cell concentration (cells/mL)",
+       fill = "Species")+
+#  scale_y_log10(breaks = c(10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 10000000000))
+  scale_y_continuous(trans='log10', breaks = c(10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 10000000000))+
+  coord_cartesian(ylim = c(10000, 10000000000))
+
+print(plot3)
