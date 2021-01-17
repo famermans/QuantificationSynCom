@@ -130,7 +130,7 @@ melted <- melted %>%
 ## Export to csv
 #write.csv2(file = "qPCR_RF_mocks.csv", melted)
 
-### Visualization
+#### Visualization ----
 plot1 <- ggplot(data = melted, aes(x = cat, y = concentration, fill = species))+
   geom_bar(stat = 'identity', position = 'stack')+
   theme_bw()+
@@ -166,3 +166,97 @@ plot3 <- ggplot(data = melted, aes(x = cat, y = concentration, fill = species))+
   coord_cartesian(ylim = c(10000, 10000000000))
 
 print(plot3)
+
+## Plot ony part of the mocks (mock 1, 2 and 8)
+melted_sel <- filter(melted, Sample_Name == "M1"| Sample_Name == "M2"| Sample_Name == "M8")
+
+plot4 <- ggplot(data = melted_sel, aes(x = cat, y = concentration, fill = species))+
+  geom_bar(stat = 'identity', position = 'fill')+
+  theme_bw()+
+  facet_grid(~ Sample_Name)+
+  labs(title = "Theoretical vs qPCR mocks",
+       x = "Technique",
+       y = "Relative abundance",
+       fill = "Species")+
+  theme(axis.text = element_text(size = 18),
+        axis.title = element_text(size = 20),
+        legend.text = element_text(size = 18),
+        legend.title = element_text(size = 20),
+        plot.title = element_text(size = 24, hjust = 0.5))
+
+print(plot4)
+
+plot5 <- ggplot(data = melted_sel, aes(x = cat, y = concentration, fill = species))+
+  geom_bar(stat = 'identity', position = 'dodge')+
+  theme_bw()+
+  facet_grid(~ Sample_Name)+
+  labs(title = "Theoretical vs qPCR mocks",
+       x = "Technique",
+       y = "Cell concentration (cells/mL)",
+       fill = "Species")+
+  scale_y_continuous(trans='log10', breaks = c(10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 10000000000))+
+  coord_cartesian(ylim = c(10000, 10000000000))+
+  theme(axis.text = element_text(size = 18),
+        axis.title = element_text(size = 20),
+        legend.text = element_text(size = 18),
+        legend.title = element_text(size = 20),
+        plot.title = element_text(size = 24, hjust = 0.5))
+
+print(plot5)
+
+## Other selection of samples (M1, M2, M3, M8)
+melted_sel2 <- filter(melted, Sample_Name == "M1"| Sample_Name == "M2"| Sample_Name == "M8" | Sample_Name == "M3" & cat == "FCM")
+
+plot_sel <- ggplot(data = melted_sel2, aes(x = Sample_Name, y = concentration, fill = species))+
+  geom_bar(stat = 'identity', position = 'fill')+
+  theme_bw()+
+  labs(title = "Prediction mocks",
+       x = "Mock",
+       y = "Relative abundance",
+       fill = "Species")+
+  theme(axis.text = element_text(size = 18),
+        axis.title = element_text(size = 20),
+        legend.text = element_text(size = 18),
+        legend.title = element_text(size = 20),
+        plot.title = element_text(size = 24, hjust = 0.5))
+
+print(plot_sel)
+
+
+#### Visualization co-cultures ----
+
+csv_cocultures <- read.csv(file = "data/qPCR_cocultures.csv", header = T, sep = ";", stringsAsFactors = F)
+
+plot6 <- ggplot(data = csv_cocultures, aes(x = cat, y = concentration, fill = species))+
+  geom_bar(stat = 'identity', position = 'dodge')+
+  theme_bw()+
+  facet_grid(~ replicate)+
+  labs(title = "Co-culture 2 (So, Fn, Pg)",
+       x = "Technique",
+       y = "Cell concentration (cells/mL)",
+       fill = "Species")+
+  scale_y_continuous(trans='log10', breaks = c(10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 10000000000))+
+  coord_cartesian(ylim = c(100000, 10000000000))+
+  theme(axis.text = element_text(size = 18),
+        axis.title = element_text(size = 20),
+        legend.text = element_text(size = 18),
+        legend.title = element_text(size = 20),
+        plot.title = element_text(size = 24, hjust = 0.5))
+
+print(plot6)
+
+plot7 <- ggplot(data = csv_cocultures, aes(x = cat, y = concentration, fill = species))+
+  geom_bar(stat = 'identity', position = 'fill')+
+  theme_bw()+
+  facet_grid(~ replicate)+
+  labs(title = "Co-culture 2 (So, Fn, Pg)",
+       x = "Technique",
+       y = "Relative abundance",
+       fill = "Species")+
+  theme(axis.text = element_text(size = 18),
+        axis.title = element_text(size = 20),
+        legend.text = element_text(size = 18),
+        legend.title = element_text(size = 20),
+        plot.title = element_text(size = 24, hjust = 0.5))
+
+print(plot7)
