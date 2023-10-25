@@ -2,7 +2,7 @@
 
 ## Clear environment and set working directory
 rm(list = ls())
-setwd("/media/projects1/Fabian/Oral microbiome/StrainRecognitionFC/qPCR")
+setwd("/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM")
 
 ## Load libraries
 #library("Phenoflow")
@@ -27,8 +27,9 @@ set.seed(777)
 
 #### Loading data ----
 
-csv_mocks <- read.csv(file = "data/qPCR_mocks.csv", header = T, sep = ";", stringsAsFactors = F)
-csv_counts <- read.csv(file = "data/Counts_mocks.csv", header = T, sep = ";", stringsAsFactors = F)
+csv_mocks <- read.csv(file = "/media/cmetfcm/Fabian/Oral_Microbiology/Strain_Recognition_FCM/qPCR/data/qPCR_mocks.csv", header = T, sep = ";", stringsAsFactors = F)
+csv_counts <- read.csv(file = "/media/cmetfcm/Fabian/Oral_Microbiology/Strain_Recognition_FCM/qPCR/data/Counts_mocks.csv", header = T, sep = ";", stringsAsFactors = F)
+
 
 #### Calculations ----
 
@@ -222,16 +223,15 @@ plot_sel <- ggplot(data = melted_sel2, aes(x = Sample_Name, y = concentration, f
 
 print(plot_sel)
 
+#### Visualization mocks with Illumina data ----
+csv_mocks2 <- read.csv(file = "/media/cmetfcm/Fabian/Oral_Microbiology/Strain_Recognition_FCM/qPCR/data/qPCR_RF_mocks2.csv", header = T, sep = ";", stringsAsFactors = F)
+csv_mocks2 <- csv_mocks2[, -1]
 
-#### Visualization co-cultures ----
-
-csv_cocultures <- read.csv(file = "data/qPCR_cocultures.csv", header = T, sep = ";", stringsAsFactors = F)
-
-plot6 <- ggplot(data = csv_cocultures, aes(x = cat, y = concentration, fill = species))+
+plot6 <- ggplot(data = csv_mocks2, aes(x = cat, y = concentration, fill = species))+
   geom_bar(stat = 'identity', position = 'dodge')+
   theme_bw()+
-  facet_grid(~ replicate)+
-  labs(title = "Co-culture 2 (So, Fn, Pg)",
+  facet_grid(~ Sample_Name)+
+  labs(title = "Mock Communities",
        x = "Technique",
        y = "Cell concentration (cells/mL)",
        fill = "Species")+
@@ -245,10 +245,50 @@ plot6 <- ggplot(data = csv_cocultures, aes(x = cat, y = concentration, fill = sp
 
 print(plot6)
 
-plot7 <- ggplot(data = csv_cocultures, aes(x = cat, y = concentration, fill = species))+
+plot7 <- ggplot(data = csv_mocks2, aes(x = cat, y = concentration, fill = species))+
   geom_bar(stat = 'identity', position = 'fill')+
   theme_bw()+
-  facet_grid(~ replicate)+
+  facet_grid(~ Sample_Name)+
+  labs(title = "Mock Communities",
+       x = "Technique",
+       y = "Relative abundance",
+       fill = "Species")+
+  theme(axis.text = element_text(size = 18),
+        axis.title = element_text(size = 20),
+        axis.text.x = element_text(angle = 90),
+        legend.text = element_text(size = 18),
+        legend.title = element_text(size = 20),
+        plot.title = element_text(size = 24, hjust = 0.5))
+
+print(plot7)
+
+
+#### Visualization co-cultures ----
+
+csv_cocultures <- read.csv(file = "/media/cmetfcm/Fabian/Oral_Microbiology/Strain_Recognition_FCM/qPCR/data/qPCR_cocultures2.csv", header = T, sep = ";", stringsAsFactors = F)
+
+plot8 <- ggplot(data = csv_cocultures, aes(x = cat, y = concentration, fill = species))+
+  geom_bar(stat = 'identity', position = 'dodge')+
+  theme_bw()+
+  facet_grid(~ Replicate)+
+  labs(title = "Co-culture 2 (So, Fn, Pg)",
+       x = "Technique",
+       y = "Cell concentration (cells/mL)",
+       fill = "Species")+
+  scale_y_continuous(trans='log10', breaks = c(10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 10000000000))+
+  coord_cartesian(ylim = c(100000, 10000000000))+
+  theme(axis.text = element_text(size = 18),
+        axis.title = element_text(size = 20),
+        legend.text = element_text(size = 18),
+        legend.title = element_text(size = 20),
+        plot.title = element_text(size = 24, hjust = 0.5))
+
+print(plot8)
+
+plot9 <- ggplot(data = csv_cocultures, aes(x = cat, y = concentration, fill = species))+
+  geom_bar(stat = 'identity', position = 'fill')+
+  theme_bw()+
+  facet_grid(~ Replicate)+
   labs(title = "Co-culture 2 (So, Fn, Pg)",
        x = "Technique",
        y = "Relative abundance",
@@ -259,4 +299,4 @@ plot7 <- ggplot(data = csv_cocultures, aes(x = cat, y = concentration, fill = sp
         legend.title = element_text(size = 20),
         plot.title = element_text(size = 24, hjust = 0.5))
 
-print(plot7)
+print(plot9)
