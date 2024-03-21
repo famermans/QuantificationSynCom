@@ -2,7 +2,7 @@
 
 ## Clear environment and set working directory
 rm(list = ls())
-setwd("/media/projects1/Fabian/Oral microbiome/StrainRecognitionFC")
+setwd("/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM")
 
 ## Load libraries
 library("Phenoflow")
@@ -28,7 +28,7 @@ set.seed(777)
 
 #### Loading data ----
 
-Datapath <- "/media/projects1/Fabian/Oral microbiome/StrainRecognitionFC/data"
+Datapath <- "/media/cmetfcm/Fabian/Oral_Microbiology/Strain_Recognition_FCM/data"
 fcsfiles <- list.files(path = Datapath, recursive = TRUE, pattern = ".fcs", full.names = TRUE)
 flowData <- flowCore::read.flowSet(files = fcsfiles, transformation = FALSE, emptyValue = F)
 
@@ -60,6 +60,8 @@ metadata <- data.frame(do.call(rbind, lapply(strsplit(flowCore::sampleNames(flow
 colnames(metadata) <- c("Date", "Experimenter", "ExperimentID", "Medium", "Timepoint", "Strain", "Replicate", "Dilution", "Stain", "Well")
 
 metadata$Dilution <- as.numeric(metadata$Dilution)
+
+metadata$Well <- substr(metadata$Well, start = 1, stop = nchar(metadata$Well)-4)
 
 name <- list.files(path = Datapath, recursive = TRUE, pattern = ".fcs", full.names = FALSE)
 Sample_Info <- cbind(name, metadata)
@@ -168,6 +170,11 @@ p_singlets <- xyplot(`BL1-H`~`BL1-W`, data = flowData_transformed[c(1:729)],
 #### Select data ----
 flowData_transformed_sel <- flowData_transformed[c(1:122, 297:413, 656:696)]
 metadata_sel <- metadata[c(1:122, 297:413, 656:696), ]
+
+flowData_transformed_BHI <- flowData_transformed[c(1:122, 656:675)]
+metadata_BHI <- metadata[c(1:122, 656:675), ]
+
+rownames(metadata_BHI) <- NULL
 
 #### Gating ----
 
