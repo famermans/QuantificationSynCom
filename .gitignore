@@ -3,3 +3,9 @@
 .RData
 .Ruserdata
 *.jpeg
+*.tiff
+*.csv
+/DADA2
+/RDS_objects
+/FACSVerse
+/RandomForest
