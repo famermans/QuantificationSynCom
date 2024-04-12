@@ -31,6 +31,10 @@ fourtycolors <- c("#F0E68C", "#FFE4B5", "#BDB76B", "#00CED3", "#20B2AA", "#00FFF
                   "#800080", "#800000", "#CC0000", "#F08080", "#FF0000", "#FF3333", "#FF5530", "#FF6C00", "#FFA500", "#4682B4",
                   "#008080", "#008000", "#32CD32", "#336633", "#808000", "#2E8B57", "#00FF7F", "#7CFC00", "#778899", "#ADFF2F")
 
+# Load functions
+source(file = "/Projects1/Fabian/paper_theme_fab.R")
+source(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/Functions/count_capital_letters.R")
+
 
 # 2. Load and transform data ----
 
@@ -306,6 +310,7 @@ SingletCount <- toTable(SingletCount)
 
 
 # 6. Cell concentrations ----
+## 6.1. Calculate concentrations ----
 
 # Cell counts
 cells <- flowCore::filter(flowData_transformed_BHI, polyGate1)
@@ -319,7 +324,30 @@ vol <- as.numeric(flowCore::fsApply(flowData_transformed_BHI_gated, FUN = functi
 # Concentrations (cells/mL)
 cell_concentrations <- data.frame(Sample_name = flowCore::sampleNames(flowData_transformed_BHI_gated),
                                   Strain = metadata_BHI$Strain,
+                                  Replicate = metadata_BHI$Replicate,
+                                  Timepoint = metadata_BHI$Timepoint,
                                   Concentration = ((TotalCount$true*metadata_BHI$Dilution)/vol)*1000)
+
+
+## 6.2. Calculations theoretical concentrations mocks ----
+# Calculate mean cell concentration per replicate
+cell_concentrations_mean <- aggregate(Concentration ~ Strain + Replicate + Timepoint, data = cell_concentrations, FUN = mean)
+cell_concentrations_mean$Merge <- paste(cell_concentrations_mean$Strain, cell_concentrations_mean$Replicate, sep = "_")
+
+volumes_mocks <- read.csv(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/20200512_Mocks.csv", header = T, sep = ";", stringsAsFactors = T)
+volumes_mocks$Merge <- paste(volumes_mocks$Strain, volumes_mocks$Replicate, sep = "_")
+
+theoretical_mocks <- merge(volumes_mocks, cell_concentrations_mean, by = "Merge")
+theoretical_mocks <- theoretical_mocks[, c(2:6, 10)]
+colnames(theoretical_mocks)[colnames(theoretical_mocks) == "Strain.x"] <- "Strain"
+colnames(theoretical_mocks)[colnames(theoretical_mocks) == "Replicate.x"] <- "Replicate"
+colnames(theoretical_mocks)[colnames(theoretical_mocks) == "Concentration"] <- "Concentration_Axenic"
+
+theoretical_mocks$Counts <- theoretical_mocks$Volume*theoretical_mocks$Concentration_Axenic
+theoretical_mocks$Concentration_Mock <- theoretical_mocks$Counts/theoretical_mocks$Total_volume
+
+theoretical_mocks <- theoretical_mocks[, c(1, 2, 8)]
+saveRDS(object = theoretical_mocks, file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RDS_objects/theoretical_mocks.rds")
 
 
 # 7. Phenotypic diversity analysis ----
@@ -403,6 +431,58 @@ vol2 <- data.frame(Sample_name = flowCore::sampleNames(flowData_transformed_BHI)
 TotalCount2 <- left_join(TotalCount, vol2, by = c("sample" = "Sample_name"))
 TotalCount2 <- left_join(TotalCount2, cell_concentrations, by = c("sample" = "Sample_name"))
 write.csv2(file = "TotalCount.csv", TotalCount2)
+
+### Model for So and Fn in BHI2
+# Select the fcs files based on which the model will be trained --> So (replicate A), Fn (replicate C) grown in BHI2
+fcs_names_SoFn <- c("20200512_Fabian_14strainID_BHI2_24h_So_A_1000_SG_D1.fcs",
+                    "20200512_Fabian_14strainID_BHI2_24h_Fn_C_1000_SG_B5.fcs")
+
+Sample_Info_SoFn <- Sample_Info %>% dplyr::filter(name %in% fcs_names_SoFn)
+#Model_RF_SoFn <- Phenoflow::RandomF_FCS(flowData_transformed_BHI_gated[fcs_names_SoFn], Sample_Info_SoFn, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
+#saveRDS(object = Model_RF_SoFn, file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RandomForest/RF_BHI_8param_SoFn.rds")
+Model_RF_SoFn <- readRDS(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RandomForest/RF_BHI_8param_SoFn.rds")
+
+## Make predictions for relevant mixtures and co-cultures in BHI2
+fcs_topre_BHI_SoFn <- c("20200617_Fabian_14strainID_BHI2_24h_Co1_A_1000_SG_A1.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co1_A_1000_SG_B1.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co1_B_1000_SG_C1.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co1_B_1000_SG_D1.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co1_C_1000_SG_E1.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co1_C_1000_SG_F1.fcs",
+                        "20200618_Fabian_14strainID_BHI2_48h_Co1_A_1000_SG_A1.fcs",
+                        "20200618_Fabian_14strainID_BHI2_48h_Co1_B_1000_SG_B1.fcs",
+                        "20200618_Fabian_14strainID_BHI2_48h_Co1_C_1000_SG_C1.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co2_A_1000_SG_A2.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co2_A_1000_SG_B2.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co2_B_1000_SG_C2.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co2_B_1000_SG_D2.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co2_C_1000_SG_G1.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co2_C_1000_SG_H1.fcs",
+                        "20200618_Fabian_14strainID_BHI2_48h_Co2_A_1000_SG_A2.fcs",
+                        "20200618_Fabian_14strainID_BHI2_48h_Co2_B_1000_SG_B2.fcs",
+                        "20200618_Fabian_14strainID_BHI2_48h_Co2_C_1000_SG_D1.fcs",
+                        "20200512_Fabian_14strainID_BHI2_NA_Mix1_NA_1000_SG_A8.fcs",
+                        "20200512_Fabian_14strainID_BHI2_NA_Mix1_NA_1000_SG_A9.fcs",
+                        "20200512_Fabian_14strainID_BHI2_NA_Mix2_NA_1000_SG_A10.fcs",
+                        "20200512_Fabian_14strainID_BHI2_NA_Mix2_NA_1000_SG_A11.fcs",
+                        "20200512_Fabian_14strainID_BHI2_NA_Mix3_NA_1000_SG_B8.fcs",
+                        "20200512_Fabian_14strainID_BHI2_NA_Mix3_NA_1000_SG_B9.fcs",
+                        "20200512_Fabian_14strainID_BHI2_NA_Mix8_NA_1000_SG_D10.fcs",
+                        "20200512_Fabian_14strainID_BHI2_NA_Mix8_NA_1000_SG_D11.fcs",
+                        "20200512_Fabian_14strainID_BHI2_NA_Mix9_NA_1000_SG_E8.fcs",
+                        "20200512_Fabian_14strainID_BHI2_NA_Mix9_NA_1000_SG_E9.fcs")
+
+flowData_topre_BHI_SoFn <- flowData_transformed_BHI_gated[fcs_topre_BHI_SoFn]
+test_pred_BHI_SoFn <- RandomF_predict(x = Model_RF_SoFn[[1]], new_data =  flowData_topre_BHI_SoFn, cleanFCS = FALSE)
+
+# Export predictions
+test_pred_BHI2_SoFn <- left_join(test_pred_BHI_SoFn, vol2, by = c("Sample" = "Sample_name"))
+test_pred_BHI2_SoFn <- left_join(test_pred_BHI2_SoFn, Sample_Info, by = c("Sample" = "name"))
+test_pred_BHI2_SoFn <- test_pred_BHI2_SoFn %>%
+  mutate(Concentration = (Counts*Dilution)/Volume)
+# Export as csv file
+write.csv2(file = "PredictedCellsSoFn.csv", test_pred_BHI2_SoFn)
+
 
 ### Model for So, Fn and Pg in BHI2
 # Sample selection So
@@ -489,57 +569,6 @@ test_pred_BHI2_SoFnPg <- test_pred_BHI2_SoFnPg %>%
         mutate(Concentration = (Counts*Dilution)/Volume)
 # Export as csv file
 write.csv2(file = "PredictedCellsSoFnPg.csv", test_pred_BHI2_SoFnPg)
-
-### Model for So and Fn in BHI2
-# Select the fcs files based on which the model will be trained --> So (replicate A), Fn (replicate C) grown in BHI2
-fcs_names_SoFn <- c("20200512_Fabian_14strainID_BHI2_24h_So_A_1000_SG_D1.fcs",
-                    "20200512_Fabian_14strainID_BHI2_24h_Fn_C_1000_SG_B5.fcs")
-
-Sample_Info_SoFn <- Sample_Info %>% dplyr::filter(name %in% fcs_names_SoFn)
-#Model_RF_SoFn <- Phenoflow::RandomF_FCS(flowData_transformed_BHI_gated[fcs_names_SoFn], Sample_Info_SoFn, target_label = "Strain", downsample = 10000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
-#saveRDS(object = Model_RF_SoFn, file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RandomForest/RF_BHI_8param_SoFn.rds")
-Model_RF_SoFn <- readRDS(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RandomForest/RF_BHI_8param_SoFn.rds")
-
-## Make predictions for relevant mixtures and co-cultures in BHI2
-fcs_topre_BHI_SoFn <- c("20200617_Fabian_14strainID_BHI2_24h_Co1_A_1000_SG_A1.fcs",
-                         "20200617_Fabian_14strainID_BHI2_24h_Co1_A_1000_SG_B1.fcs",
-                         "20200617_Fabian_14strainID_BHI2_24h_Co1_B_1000_SG_C1.fcs",
-                         "20200617_Fabian_14strainID_BHI2_24h_Co1_B_1000_SG_D1.fcs",
-                         "20200617_Fabian_14strainID_BHI2_24h_Co1_C_1000_SG_E1.fcs",
-                         "20200617_Fabian_14strainID_BHI2_24h_Co1_C_1000_SG_F1.fcs",
-                         "20200618_Fabian_14strainID_BHI2_48h_Co1_A_1000_SG_A1.fcs",
-                         "20200618_Fabian_14strainID_BHI2_48h_Co1_B_1000_SG_B1.fcs",
-                         "20200618_Fabian_14strainID_BHI2_48h_Co1_C_1000_SG_C1.fcs",
-                         "20200617_Fabian_14strainID_BHI2_24h_Co2_A_1000_SG_A2.fcs",
-                         "20200617_Fabian_14strainID_BHI2_24h_Co2_A_1000_SG_B2.fcs",
-                         "20200617_Fabian_14strainID_BHI2_24h_Co2_B_1000_SG_C2.fcs",
-                         "20200617_Fabian_14strainID_BHI2_24h_Co2_B_1000_SG_D2.fcs",
-                         "20200617_Fabian_14strainID_BHI2_24h_Co2_C_1000_SG_G1.fcs",
-                         "20200617_Fabian_14strainID_BHI2_24h_Co2_C_1000_SG_H1.fcs",
-                         "20200618_Fabian_14strainID_BHI2_48h_Co2_A_1000_SG_A2.fcs",
-                         "20200618_Fabian_14strainID_BHI2_48h_Co2_B_1000_SG_B2.fcs",
-                         "20200618_Fabian_14strainID_BHI2_48h_Co2_C_1000_SG_D1.fcs",
-                         "20200512_Fabian_14strainID_BHI2_NA_Mix1_NA_1000_SG_A8.fcs",
-                         "20200512_Fabian_14strainID_BHI2_NA_Mix1_NA_1000_SG_A9.fcs",
-                         "20200512_Fabian_14strainID_BHI2_NA_Mix2_NA_1000_SG_A10.fcs",
-                         "20200512_Fabian_14strainID_BHI2_NA_Mix2_NA_1000_SG_A11.fcs",
-                         "20200512_Fabian_14strainID_BHI2_NA_Mix3_NA_1000_SG_B8.fcs",
-                         "20200512_Fabian_14strainID_BHI2_NA_Mix3_NA_1000_SG_B9.fcs",
-                         "20200512_Fabian_14strainID_BHI2_NA_Mix8_NA_1000_SG_D10.fcs",
-                         "20200512_Fabian_14strainID_BHI2_NA_Mix8_NA_1000_SG_D11.fcs",
-                         "20200512_Fabian_14strainID_BHI2_NA_Mix9_NA_1000_SG_E8.fcs",
-                         "20200512_Fabian_14strainID_BHI2_NA_Mix9_NA_1000_SG_E9.fcs")
-
-flowData_topre_BHI_SoFn <- flowData_transformed_BHI_gated[fcs_topre_BHI_SoFn]
-test_pred_BHI_SoFn <- RandomF_predict(x = Model_RF_SoFn[[1]], new_data =  flowData_topre_BHI_SoFn, cleanFCS = FALSE)
-
-# Export predictions
-test_pred_BHI2_SoFn <- left_join(test_pred_BHI_SoFn, vol2, by = c("Sample" = "Sample_name"))
-test_pred_BHI2_SoFn <- left_join(test_pred_BHI2_SoFn, Sample_Info, by = c("Sample" = "name"))
-test_pred_BHI2_SoFn <- test_pred_BHI2_SoFn %>%
-        mutate(Concentration = (Counts*Dilution)/Volume)
-# Export as csv file
-write.csv2(file = "PredictedCellsSoFn.csv", test_pred_BHI2_SoFn)
 
 
 ### Model for So, Fn and Pi in BHI2 for comparison in performance compared to FACSVerse
@@ -939,14 +968,170 @@ write.csv2(file = "PredictedCellsSoSsalSsanSmiSgVpAvAnAaFnPgPiSmuSsob.csv", test
 
 
 ## 8.2. Training with replicates ----
+# downsample is set to 12328 events, as this is the lowest number of events for a pooled strain (An) --> make models comparable
+
+### Model for So and Fn in BHI2
+# Select the fcs files based on which the model will be trained --> So, Fn grown in BHI2
+flowData_pooled_SoFn <- FCS_pool(x = flowData_transformed_BHI_gated,
+                                     stub = c("20200512_Fabian_14strainID_BHI2_24h_So",
+                                              "20200512_Fabian_14strainID_BHI2_24h_Fn"))
+
+metadata_pooled_SoFn <- data.frame(do.call(rbind, lapply(strsplit(flowCore::sampleNames(flowData_pooled_SoFn), "_"), rbind)))
+colnames(metadata_pooled_SoFn) <- c("Date", "Experimenter", "ExperimentID", "Medium", "Timepoint", "Strain")
+
+name_pooled_SoFn <- flowCore::sampleNames(flowData_pooled_SoFn)
+Sample_Info_pooled_SoFn <- cbind(name_pooled_SoFn, metadata_pooled_SoFn)
+
+# Plot not working for some reason
+# xyplot(`BL3-A`~`BL1-A`, data = flowData_pooled_SoFn,
+#        scales = list(y = list(limits = c(0, 15)),
+#                      x = list(limits = c(5, 15))),
+#        axis = axis.default, nbin = 125, main = "Test pooled samples", xlab = "BL1-A", ylab = "BL3-A",
+#        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+cells_SoFn_pooled <- flowCore::filter(flowData_pooled_SoFn, polyGate1)
+TotalCount_SoFn_pooled <- summary(cells_SoFn_pooled)
+TotalCount_SoFn_pooled <- toTable(TotalCount_SoFn_pooled)
+
+fcs_names_SoFn_pooled <- c("20200512_Fabian_14strainID_BHI2_24h_So",
+                           "20200512_Fabian_14strainID_BHI2_24h_Fn")
+
+#Model_RF_SoFn_pooled <- Phenoflow::RandomF_FCS(flowData_pooled_SoFn[fcs_names_SoFn_pooled], Sample_Info_pooled_SoFn, sample_col = "name_pooled_SoFn", target_label = "Strain", downsample = 12328, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
+#saveRDS(object = Model_RF_SoFn_pooled, file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RandomForest/RF_BHI_8param_SoFn_pooled.rds")
+Model_RF_SoFn_pooled <- readRDS(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RandomForest/RF_BHI_8param_SoFn_pooled.rds")
+
+## Make predictions for relevant mixtures and co-cultures in BHI2
+fcs_topre_BHI_SoFn <- c("20200617_Fabian_14strainID_BHI2_24h_Co1_A_1000_SG_A1.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co1_A_1000_SG_B1.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co1_B_1000_SG_C1.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co1_B_1000_SG_D1.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co1_C_1000_SG_E1.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co1_C_1000_SG_F1.fcs",
+                        "20200618_Fabian_14strainID_BHI2_48h_Co1_A_1000_SG_A1.fcs",
+                        "20200618_Fabian_14strainID_BHI2_48h_Co1_B_1000_SG_B1.fcs",
+                        "20200618_Fabian_14strainID_BHI2_48h_Co1_C_1000_SG_C1.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co2_A_1000_SG_A2.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co2_A_1000_SG_B2.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co2_B_1000_SG_C2.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co2_B_1000_SG_D2.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co2_C_1000_SG_G1.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co2_C_1000_SG_H1.fcs",
+                        "20200618_Fabian_14strainID_BHI2_48h_Co2_A_1000_SG_A2.fcs",
+                        "20200618_Fabian_14strainID_BHI2_48h_Co2_B_1000_SG_B2.fcs",
+                        "20200618_Fabian_14strainID_BHI2_48h_Co2_C_1000_SG_D1.fcs",
+                        "20200512_Fabian_14strainID_BHI2_NA_Mix1_NA_1000_SG_A8.fcs",
+                        "20200512_Fabian_14strainID_BHI2_NA_Mix1_NA_1000_SG_A9.fcs",
+                        "20200512_Fabian_14strainID_BHI2_NA_Mix2_NA_1000_SG_A10.fcs",
+                        "20200512_Fabian_14strainID_BHI2_NA_Mix2_NA_1000_SG_A11.fcs",
+                        "20200512_Fabian_14strainID_BHI2_NA_Mix3_NA_1000_SG_B8.fcs",
+                        "20200512_Fabian_14strainID_BHI2_NA_Mix3_NA_1000_SG_B9.fcs",
+                        "20200512_Fabian_14strainID_BHI2_NA_Mix8_NA_1000_SG_D10.fcs",
+                        "20200512_Fabian_14strainID_BHI2_NA_Mix8_NA_1000_SG_D11.fcs",
+                        "20200512_Fabian_14strainID_BHI2_NA_Mix9_NA_1000_SG_E8.fcs",
+                        "20200512_Fabian_14strainID_BHI2_NA_Mix9_NA_1000_SG_E9.fcs")
+
+flowData_topre_BHI_SoFn <- flowData_transformed_BHI_gated[fcs_topre_BHI_SoFn]
+test_pred_BHI_SoFn_pooled <- RandomF_predict(x = Model_RF_SoFn_pooled[[1]], new_data = flowData_topre_BHI_SoFn, cleanFCS = FALSE)
+
+# Export predictions
+test_pred_BHI2_SoFn_pooled <- left_join(test_pred_BHI_SoFn_pooled, vol2, by = c("Sample" = "Sample_name"))
+test_pred_BHI2_SoFn_pooled <- left_join(test_pred_BHI2_SoFn_pooled, Sample_Info, by = c("Sample" = "name"))
+test_pred_BHI2_SoFn_pooled <- test_pred_BHI2_SoFn_pooled %>%
+  mutate(Concentration = (Counts*Dilution)/Volume)
+# Export as csv file
+write.csv2(file = "PredictedCellsSoFn_pooled.csv", test_pred_BHI2_SoFn_pooled)
+
+
+### Model for So, Fn and Pg in BHI2
+# Select the fcs files based on which the model will be trained --> So, Fn, Pg grown in BHI2
+flowData_pooled_SoFnPg <- FCS_pool(x = flowData_transformed_BHI_gated,
+                                     stub = c("20200512_Fabian_14strainID_BHI2_24h_So",
+                                              "20200512_Fabian_14strainID_BHI2_24h_Fn",
+                                              "20200512_Fabian_14strainID_BHI2_24h_Pg"))
+
+metadata_pooled_SoFnPg <- data.frame(do.call(rbind, lapply(strsplit(flowCore::sampleNames(flowData_pooled_SoFnPg), "_"), rbind)))
+colnames(metadata_pooled_SoFnPg) <- c("Date", "Experimenter", "ExperimentID", "Medium", "Timepoint", "Strain")
+
+name_pooled_SoFnPg <- flowCore::sampleNames(flowData_pooled_SoFnPg)
+Sample_Info_pooled_SoFnPg <- cbind(name_pooled_SoFnPg, metadata_pooled_SoFnPg)
+
+# Plot not working for some reason
+# xyplot(`BL3-A`~`BL1-A`, data = flowData_pooled_SoFnPg,
+#        scales = list(y = list(limits = c(0, 15)),
+#                      x = list(limits = c(5, 15))),
+#        axis = axis.default, nbin = 125, main = "Test pooled samples", xlab = "BL1-A", ylab = "BL3-A",
+#        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+cells_SoFnPg_pooled <- flowCore::filter(flowData_pooled_SoFnPg, polyGate1)
+TotalCount_SoFnPg_pooled <- summary(cells_SoFnPg_pooled)
+TotalCount_SoFnPg_pooled <- toTable(TotalCount_SoFnPg_pooled)
+
+fcs_names_SoFnPg_pooled <- c("20200512_Fabian_14strainID_BHI2_24h_So",
+                             "20200512_Fabian_14strainID_BHI2_24h_Fn",
+                             "20200512_Fabian_14strainID_BHI2_24h_Pg")
+
+#Model_RF_SoFnPg_pooled <- Phenoflow::RandomF_FCS(flowData_pooled_SoFnPg[fcs_names_SoFnPg_pooled], Sample_Info_pooled_SoFnPg, sample_col = "name_pooled_SoFnPg", target_label = "Strain", downsample = 12328, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
+#saveRDS(object = Model_RF_SoFnPg_pooled, file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RandomForest/RF_BHI_8param_SoFnPg_pooled.rds")
+Model_RF_SoFnPg_pooled <- readRDS(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RandomForest/RF_BHI_8param_SoFnPg_pooled.rds")
+
+## Make predictions for relevant mixtures and co-cultures in BHI2
+fcs_topre_BHI_SoFnPg <- c("20200617_Fabian_14strainID_BHI2_24h_Co1_A_1000_SG_A1.fcs",
+                          "20200617_Fabian_14strainID_BHI2_24h_Co1_A_1000_SG_B1.fcs",
+                          "20200617_Fabian_14strainID_BHI2_24h_Co1_B_1000_SG_C1.fcs",
+                          "20200617_Fabian_14strainID_BHI2_24h_Co1_B_1000_SG_D1.fcs",
+                          "20200617_Fabian_14strainID_BHI2_24h_Co1_C_1000_SG_E1.fcs",
+                          "20200617_Fabian_14strainID_BHI2_24h_Co1_C_1000_SG_F1.fcs",
+                          "20200618_Fabian_14strainID_BHI2_48h_Co1_A_1000_SG_A1.fcs",
+                          "20200618_Fabian_14strainID_BHI2_48h_Co1_B_1000_SG_B1.fcs",
+                          "20200618_Fabian_14strainID_BHI2_48h_Co1_C_1000_SG_C1.fcs",
+                          "20200617_Fabian_14strainID_BHI2_24h_Co2_A_1000_SG_A2.fcs",
+                          "20200617_Fabian_14strainID_BHI2_24h_Co2_A_1000_SG_B2.fcs",
+                          "20200617_Fabian_14strainID_BHI2_24h_Co2_B_1000_SG_C2.fcs",
+                          "20200617_Fabian_14strainID_BHI2_24h_Co2_B_1000_SG_D2.fcs",
+                          "20200617_Fabian_14strainID_BHI2_24h_Co2_C_1000_SG_G1.fcs",
+                          "20200617_Fabian_14strainID_BHI2_24h_Co2_C_1000_SG_H1.fcs",
+                          "20200618_Fabian_14strainID_BHI2_48h_Co2_A_1000_SG_A2.fcs",
+                          "20200618_Fabian_14strainID_BHI2_48h_Co2_B_1000_SG_B2.fcs",
+                          "20200618_Fabian_14strainID_BHI2_48h_Co2_C_1000_SG_D1.fcs",
+                          "20200617_Fabian_14strainID_BHI2_24h_Co3_A_1000_SG_A3.fcs",
+                          "20200617_Fabian_14strainID_BHI2_24h_Co3_A_1000_SG_B3.fcs",
+                          "20200617_Fabian_14strainID_BHI2_24h_Co3_B_1000_SG_E2.fcs",
+                          "20200617_Fabian_14strainID_BHI2_24h_Co3_B_1000_SG_F2.fcs",
+                          "20200617_Fabian_14strainID_BHI2_24h_Co3_C_1000_SG_G2.fcs",
+                          "20200617_Fabian_14strainID_BHI2_24h_Co3_C_1000_SG_H2.fcs",
+                          "20200618_Fabian_14strainID_BHI2_48h_Co3_A_1000_SG_A3.fcs",
+                          "20200618_Fabian_14strainID_BHI2_48h_Co3_B_1000_SG_C2.fcs",
+                          "20200618_Fabian_14strainID_BHI2_48h_Co3_C_1000_SG_D2.fcs",
+                          "20200512_Fabian_14strainID_BHI2_NA_Mix1_NA_1000_SG_A8.fcs",
+                          "20200512_Fabian_14strainID_BHI2_NA_Mix1_NA_1000_SG_A9.fcs",
+                          "20200512_Fabian_14strainID_BHI2_NA_Mix2_NA_1000_SG_A10.fcs",
+                          "20200512_Fabian_14strainID_BHI2_NA_Mix2_NA_1000_SG_A11.fcs",
+                          "20200512_Fabian_14strainID_BHI2_NA_Mix3_NA_1000_SG_B8.fcs",
+                          "20200512_Fabian_14strainID_BHI2_NA_Mix3_NA_1000_SG_B9.fcs",
+                          "20200512_Fabian_14strainID_BHI2_NA_Mix8_NA_1000_SG_D10.fcs",
+                          "20200512_Fabian_14strainID_BHI2_NA_Mix8_NA_1000_SG_D11.fcs",
+                          "20200512_Fabian_14strainID_BHI2_NA_Mix9_NA_1000_SG_E8.fcs",
+                          "20200512_Fabian_14strainID_BHI2_NA_Mix9_NA_1000_SG_E9.fcs")
+
+flowData_topre_BHI_SoFnPg <- flowData_transformed_BHI_gated[fcs_topre_BHI_SoFnPg]
+test_pred_BHI_SoFnPg_pooled <- RandomF_predict(x = Model_RF_SoFnPg_pooled[[1]], new_data = flowData_topre_BHI_SoFnPg, cleanFCS = FALSE)
+
+# Export predictions
+test_pred_BHI2_SoFnPg_pooled <- left_join(test_pred_BHI_SoFnPg_pooled, vol2, by = c("Sample" = "Sample_name"))
+test_pred_BHI2_SoFnPg_pooled <- left_join(test_pred_BHI2_SoFnPg_pooled, Sample_Info, by = c("Sample" = "name"))
+test_pred_BHI2_SoFnPg_pooled <- test_pred_BHI2_SoFnPg_pooled %>%
+  mutate(Concentration = (Counts*Dilution)/Volume)
+# Export as csv file
+write.csv2(file = "PredictedCellsSoFnPg_pooled.csv", test_pred_BHI2_SoFnPg_pooled)
+
 
 ### Model for So, Fn, Pg and Vp in BHI2
 # Select the fcs files based on which the model will be trained --> So, Fn, Pg, Vp grown in BHI2
 flowData_pooled_SoFnPgVp <- FCS_pool(x = flowData_transformed_BHI_gated,
-                            stub = c("20200512_Fabian_14strainID_BHI2_24h_So*",
-                                     "20200512_Fabian_14strainID_BHI2_24h_Fn*",
-                                     "20200512_Fabian_14strainID_BHI2_24h_Pg*",
-                                     "20200512_Fabian_14strainID_BHI2_24h_Vp*"))
+                            stub = c("20200512_Fabian_14strainID_BHI2_24h_So",
+                                     "20200512_Fabian_14strainID_BHI2_24h_Fn",
+                                     "20200512_Fabian_14strainID_BHI2_24h_Pg",
+                                     "20200512_Fabian_14strainID_BHI2_24h_Vp"))
 
 metadata_pooled_SoFnPgVp <- data.frame(do.call(rbind, lapply(strsplit(flowCore::sampleNames(flowData_pooled_SoFnPgVp), "_"), rbind)))
 colnames(metadata_pooled_SoFnPgVp) <- c("Date", "Experimenter", "ExperimentID", "Medium", "Timepoint", "Strain")
@@ -955,23 +1140,23 @@ name_pooled_SoFnPgVp <- flowCore::sampleNames(flowData_pooled_SoFnPgVp)
 Sample_Info_pooled_SoFnPgVp <- cbind(name_pooled_SoFnPgVp, metadata_pooled_SoFnPgVp)
 
 # Plot not working for some reason
-xyplot(`BL3-A`~`BL1-A`, data = flowData_pooled_SoFnPgVp,
-       scales = list(y = list(limits = c(0, 15)),
-                     x = list(limits = c(5, 15))),
-       axis = axis.default, nbin = 125, main = "Test pooled samples", xlab = "BL1-A", ylab = "BL3-A",
-       par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+# xyplot(`BL3-A`~`BL1-A`, data = flowData_pooled_SoFnPgVp,
+#        scales = list(y = list(limits = c(0, 15)),
+#                      x = list(limits = c(5, 15))),
+#        axis = axis.default, nbin = 125, main = "Test pooled samples", xlab = "BL1-A", ylab = "BL3-A",
+#        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
 
 cells_SoFnPgVp_pooled <- flowCore::filter(flowData_pooled_SoFnPgVp, polyGate1)
 TotalCount_SoFnPgVp_pooled <- summary(cells_SoFnPgVp_pooled)
 TotalCount_SoFnPgVp_pooled <- toTable(TotalCount_SoFnPgVp_pooled)
 
-fcs_names_SoFnPgVp_pooled <- c("20200512_Fabian_14strainID_BHI2_24h_So*",
-                               "20200512_Fabian_14strainID_BHI2_24h_Fn*",
-                               "20200512_Fabian_14strainID_BHI2_24h_Pg*",
-                               "20200512_Fabian_14strainID_BHI2_24h_Vp*")
+fcs_names_SoFnPgVp_pooled <- c("20200512_Fabian_14strainID_BHI2_24h_So",
+                               "20200512_Fabian_14strainID_BHI2_24h_Fn",
+                               "20200512_Fabian_14strainID_BHI2_24h_Pg",
+                               "20200512_Fabian_14strainID_BHI2_24h_Vp")
 
-#Model_RF_SoFnPgVp_pooled <- Phenoflow::RandomF_FCS(flowData_pooled_SoFnPgVp[fcs_names_SoFnPgVp_pooled], Sample_Info_SoFnPgVp_pooled, sample_col = "name_pooled_SoFnPgVp", target_label = "Strain", downsample = 50000, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
-#saveRDS(object = Model_RF_SoFnPgVp_pooled2, file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RandomForest/RF_BHI_8param_SoFnPgVp_pooled.rds")
+#Model_RF_SoFnPgVp_pooled <- Phenoflow::RandomF_FCS(flowData_pooled_SoFnPgVp[fcs_names_SoFnPgVp_pooled], Sample_Info_pooled_SoFnPgVp, sample_col = "name_pooled_SoFnPgVp", target_label = "Strain", downsample = 12328, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
+#saveRDS(object = Model_RF_SoFnPgVp_pooled, file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RandomForest/RF_BHI_8param_SoFnPgVp_pooled.rds")
 Model_RF_SoFnPgVp_pooled <- readRDS(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RandomForest/RF_BHI_8param_SoFnPgVp_pooled.rds")
 
 ## Make predictions for relevant mixtures and co-cultures in BHI2
@@ -1014,7 +1199,7 @@ fcs_topre_BHI_SoFnPgVp <- c("20200617_Fabian_14strainID_BHI2_24h_Co1_A_1000_SG_A
                             "20200512_Fabian_14strainID_BHI2_NA_Mix9_NA_1000_SG_E9.fcs")
 
 flowData_topre_BHI_SoFnPgVp <- flowData_transformed_BHI_gated[fcs_topre_BHI_SoFnPgVp]
-test_pred_BHI_SoFnPgVp_pooled <- RandomF_predict(x = Model_RF_SoFnPgVp_pooled[[1]], new_data =  flowData_topre_BHI_SoFnPgVp, cleanFCS = FALSE)
+test_pred_BHI_SoFnPgVp_pooled <- RandomF_predict(x = Model_RF_SoFnPgVp_pooled[[1]], new_data = flowData_topre_BHI_SoFnPgVp, cleanFCS = FALSE)
 
 # Export predictions
 test_pred_BHI2_SoFnPgVp_pooled <- left_join(test_pred_BHI_SoFnPgVp_pooled, vol2, by = c("Sample" = "Sample_name"))
@@ -1023,6 +1208,314 @@ test_pred_BHI2_SoFnPgVp_pooled <- test_pred_BHI2_SoFnPgVp_pooled %>%
   mutate(Concentration = (Counts*Dilution)/Volume)
 # Export as csv file
 write.csv2(file = "PredictedCellsSoFnPgVp_pooled.csv", test_pred_BHI2_SoFnPgVp_pooled)
+
+
+## Models for artificial mixtures
+
+# Mix4
+### Model for An, Av, Sg, Smi, So, Ssal, Ssan and Vp in BHI2
+# Select the fcs files based on which the model will be trained
+flowData_pooled_AnAvSgSmiSoSsalSsanVp <- FCS_pool(x = flowData_transformed_BHI_gated,
+                                                  stub = c("20200512_Fabian_14strainID_BHI2_24h_An",
+                                                           "20200512_Fabian_14strainID_BHI2_24h_Av",
+                                                           "20200512_Fabian_14strainID_BHI2_24h_Sg",
+                                                           "20200512_Fabian_14strainID_BHI2_24h_Smi",
+                                                           "20200512_Fabian_14strainID_BHI2_24h_So",
+                                                           "20200512_Fabian_14strainID_BHI2_24h_Ssal",
+                                                           "20200512_Fabian_14strainID_BHI2_24h_Ssan",
+                                                           "20200512_Fabian_14strainID_BHI2_24h_Vp"))
+
+metadata_pooled_AnAvSgSmiSoSsalSsanVp <- data.frame(do.call(rbind, lapply(strsplit(flowCore::sampleNames(flowData_pooled_AnAvSgSmiSoSsalSsanVp), "_"), rbind)))
+colnames(metadata_pooled_AnAvSgSmiSoSsalSsanVp) <- c("Date", "Experimenter", "ExperimentID", "Medium", "Timepoint", "Strain")
+
+name_pooled_AnAvSgSmiSoSsalSsanVp <- flowCore::sampleNames(flowData_pooled_AnAvSgSmiSoSsalSsanVp)
+Sample_Info_pooled_AnAvSgSmiSoSsalSsanVp <- cbind(name_pooled_AnAvSgSmiSoSsalSsanVp, metadata_pooled_AnAvSgSmiSoSsalSsanVp)
+
+# Plot not working for some reason
+# xyplot(`BL3-A`~`BL1-A`, data = flowData_pooled_AnAvSgSmiSoSsalSsanVp,
+#        scales = list(y = list(limits = c(0, 15)),
+#                      x = list(limits = c(5, 15))),
+#        axis = axis.default, nbin = 125, main = "Test pooled samples", xlab = "BL1-A", ylab = "BL3-A",
+#        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+cells_AnAvSgSmiSoSsalSsanVp_pooled <- flowCore::filter(flowData_pooled_AnAvSgSmiSoSsalSsanVp, polyGate1)
+TotalCount_AnAvSgSmiSoSsalSsanVp_pooled <- summary(cells_AnAvSgSmiSoSsalSsanVp_pooled)
+TotalCount_AnAvSgSmiSoSsalSsanVp_pooled <- toTable(TotalCount_AnAvSgSmiSoSsalSsanVp_pooled)
+
+fcs_names_AnAvSgSmiSoSsalSsanVp_pooled <- c("20200512_Fabian_14strainID_BHI2_24h_An",
+                                            "20200512_Fabian_14strainID_BHI2_24h_Av",
+                                            "20200512_Fabian_14strainID_BHI2_24h_Sg",
+                                            "20200512_Fabian_14strainID_BHI2_24h_Smi",
+                                            "20200512_Fabian_14strainID_BHI2_24h_So",
+                                            "20200512_Fabian_14strainID_BHI2_24h_Ssal",
+                                            "20200512_Fabian_14strainID_BHI2_24h_Ssan",
+                                            "20200512_Fabian_14strainID_BHI2_24h_Vp")
+
+#Model_RF_AnAvSgSmiSoSsalSsanVp_pooled <- Phenoflow::RandomF_FCS(flowData_pooled_AnAvSgSmiSoSsalSsanVp[fcs_names_AnAvSgSmiSoSsalSsanVp_pooled], Sample_Info_pooled_AnAvSgSmiSoSsalSsanVp, sample_col = "name_pooled_AnAvSgSmiSoSsalSsanVp", target_label = "Strain", downsample = 12328, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
+#saveRDS(object = Model_RF_AnAvSgSmiSoSsalSsanVp_pooled, file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RandomForest/RF_BHI_8param_AnAvSgSmiSoSsalSsanVp_pooled.rds")
+Model_RF_AnAvSgSmiSoSsalSsanVp_pooled <- readRDS(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RandomForest/RF_BHI_8param_AnAvSgSmiSoSsalSsanVppooled.rds")
+
+## Make predictions for relevant mixtures and co-cultures in BHI2
+fcs_topre_BHI_AnAvSgSmiSoSsalSsanVp <- c("20200512_Fabian_14strainID_BHI2_NA_Mix4_NA_1000_SG_B10.fcs",
+                                         "20200512_Fabian_14strainID_BHI2_NA_Mix4_NA_1000_SG_B11.fcs")
+
+flowData_topre_BHI_AnAvSgSmiSoSsalSsanVp <- flowData_transformed_BHI_gated[fcs_topre_BHI_AnAvSgSmiSoSsalSsanVp]
+test_pred_BHI_AnAvSgSmiSoSsalSsanVp_pooled <- RandomF_predict(x = Model_RF_AnAvSgSmiSoSsalSsanVp_pooled[[1]], new_data = flowData_topre_BHI_AnAvSgSmiSoSsalSsanVp, cleanFCS = FALSE)
+
+# Export predictions
+test_pred_BHI2_AnAvSgSmiSoSsalSsanVp_pooled <- left_join(test_pred_BHI_AnAvSgSmiSoSsalSsanVp_pooled, vol2, by = c("Sample" = "Sample_name"))
+test_pred_BHI2_AnAvSgSmiSoSsalSsanVp_pooled <- left_join(test_pred_BHI2_AnAvSgSmiSoSsalSsanVp_pooled, Sample_Info, by = c("Sample" = "name"))
+test_pred_BHI2_AnAvSgSmiSoSsalSsanVp_pooled <- test_pred_BHI2_AnAvSgSmiSoSsalSsanVp_pooled %>%
+  mutate(Concentration = (Counts*Dilution)/Volume)
+# Export as csv file
+write.csv2(file = "PredictedCellsAnAvSgSmiSoSsalSsanVp_pooled.csv", test_pred_BHI2_AnAvSgSmiSoSsalSsanVp_pooled)
+
+
+# Mix5
+### Model for Sg, Smi, Smu, So, Ssal, Ssan and Ssob in BHI2
+# Select the fcs files based on which the model will be trained
+flowData_pooled_SgSmiSmuSoSsalSsanSsob <- FCS_pool(x = flowData_transformed_BHI_gated,
+                                                   stub = c("20200512_Fabian_14strainID_BHI2_24h_Sg",
+                                                            "20200512_Fabian_14strainID_BHI2_24h_Smi",
+                                                            "20200512_Fabian_14strainID_BHI2_24h_Smu",
+                                                            "20200512_Fabian_14strainID_BHI2_24h_So",
+                                                            "20200512_Fabian_14strainID_BHI2_24h_Ssal",
+                                                            "20200512_Fabian_14strainID_BHI2_24h_Ssan",
+                                                            "20200512_Fabian_14strainID_BHI2_24h_Ssob"))
+
+metadata_pooled_SgSmiSmuSoSsalSsanSsob <- data.frame(do.call(rbind, lapply(strsplit(flowCore::sampleNames(flowData_pooled_SgSmiSmuSoSsalSsanSsob), "_"), rbind)))
+colnames(metadata_pooled_SgSmiSmuSoSsalSsanSsob) <- c("Date", "Experimenter", "ExperimentID", "Medium", "Timepoint", "Strain")
+
+name_pooled_SgSmiSmuSoSsalSsanSsob <- flowCore::sampleNames(flowData_pooled_SgSmiSmuSoSsalSsanSsob)
+Sample_Info_pooled_SgSmiSmuSoSsalSsanSsob <- cbind(name_pooled_SgSmiSmuSoSsalSsanSsob, metadata_pooled_SgSmiSmuSoSsalSsanSsob)
+
+# Plot not working for some reason
+# xyplot(`BL3-A`~`BL1-A`, data = flowData_pooled_SgSmiSmuSoSsalSsanSsob,
+#        scales = list(y = list(limits = c(0, 15)),
+#                      x = list(limits = c(5, 15))),
+#        axis = axis.default, nbin = 125, main = "Test pooled samples", xlab = "BL1-A", ylab = "BL3-A",
+#        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+cells_SgSmiSmuSoSsalSsanSsob_pooled <- flowCore::filter(flowData_pooled_SgSmiSmuSoSsalSsanSsob, polyGate1)
+TotalCount_SgSmiSmuSoSsalSsanSsob_pooled <- summary(cells_SgSmiSmuSoSsalSsanSsob_pooled)
+TotalCount_SgSmiSmuSoSsalSsanSsob_pooled <- toTable(TotalCount_SgSmiSmuSoSsalSsanSsob_pooled)
+
+fcs_names_SgSmiSmuSoSsalSsanSsob_pooled <- c("20200512_Fabian_14strainID_BHI2_24h_Sg",
+                                             "20200512_Fabian_14strainID_BHI2_24h_Smi",
+                                             "20200512_Fabian_14strainID_BHI2_24h_Smu",
+                                             "20200512_Fabian_14strainID_BHI2_24h_So",
+                                             "20200512_Fabian_14strainID_BHI2_24h_Ssal",
+                                             "20200512_Fabian_14strainID_BHI2_24h_Ssan",
+                                             "20200512_Fabian_14strainID_BHI2_24h_Ssob")
+
+#Model_RF_SgSmiSmuSoSsalSsanSsob_pooled <- Phenoflow::RandomF_FCS(flowData_pooled_SgSmiSmuSoSsalSsanSsob[fcs_names_SgSmiSmuSoSsalSsanSsob_pooled], Sample_Info_pooled_SgSmiSmuSoSsalSsanSsob, sample_col = "name_pooled_SgSmiSmuSoSsalSsanSsob", target_label = "Strain", downsample = 12328, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
+#saveRDS(object = Model_RF_SgSmiSmuSoSsalSsanSsob_pooled, file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RandomForest/RF_BHI_8param_SgSmiSmuSoSsalSsanSsob_pooled.rds")
+Model_RF_SgSmiSmuSoSsalSsanSsob_pooled <- readRDS(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RandomForest/RF_BHI_8param_SgSmiSmuSoSsalSsanSsobpooled.rds")
+
+## Make predictions for relevant mixtures and co-cultures in BHI2
+fcs_topre_BHI_SgSmiSmuSoSsalSsanSsob <- c("20200512_Fabian_14strainID_BHI2_NA_Mix5_NA_1000_SG_C8.fcs",
+                                          "20200512_Fabian_14strainID_BHI2_NA_Mix5_NA_1000_SG_C9.fcs")
+
+flowData_topre_BHI_SgSmiSmuSoSsalSsanSsob <- flowData_transformed_BHI_gated[fcs_topre_BHI_SgSmiSmuSoSsalSsanSsob]
+test_pred_BHI_SgSmiSmuSoSsalSsanSsob_pooled <- RandomF_predict(x = Model_RF_SgSmiSmuSoSsalSsanSsob_pooled[[1]], new_data = flowData_topre_BHI_SgSmiSmuSoSsalSsanSsob, cleanFCS = FALSE)
+
+# Export predictions
+test_pred_BHI2_SgSmiSmuSoSsalSsanSsob_pooled <- left_join(test_pred_BHI_SgSmiSmuSoSsalSsanSsob_pooled, vol2, by = c("Sample" = "Sample_name"))
+test_pred_BHI2_SgSmiSmuSoSsalSsanSsob_pooled <- left_join(test_pred_BHI2_SgSmiSmuSoSsalSsanSsob_pooled, Sample_Info, by = c("Sample" = "name"))
+test_pred_BHI2_SgSmiSmuSoSsalSsanSsob_pooled <- test_pred_BHI2_SgSmiSmuSoSsalSsanSsob_pooled %>%
+  mutate(Concentration = (Counts*Dilution)/Volume)
+# Export as csv file
+write.csv2(file = "PredictedCellsSgSmiSmuSoSsalSsanSsob_pooled.csv", test_pred_BHI2_SgSmiSmuSoSsalSsanSsob_pooled)
+
+
+# Mix6
+### Model for Aa, Fn, Pg, Pi, Smu and Ssob in BHI2
+# Select the fcs files based on which the model will be trained
+flowData_pooled_AaFnPgPiSmuSsob <- FCS_pool(x = flowData_transformed_BHI_gated,
+                                            stub = c("20200512_Fabian_14strainID_BHI2_24h_Aa",
+                                                     "20200512_Fabian_14strainID_BHI2_24h_Fn",
+                                                     "20200512_Fabian_14strainID_BHI2_24h_Pg",
+                                                     "20200512_Fabian_14strainID_BHI2_24h_Pi",
+                                                     "20200512_Fabian_14strainID_BHI2_24h_Smu",
+                                                     "20200512_Fabian_14strainID_BHI2_24h_Ssob"))
+
+metadata_pooled_AaFnPgPiSmuSsob <- data.frame(do.call(rbind, lapply(strsplit(flowCore::sampleNames(flowData_pooled_AaFnPgPiSmuSsob), "_"), rbind)))
+colnames(metadata_pooled_AaFnPgPiSmuSsob) <- c("Date", "Experimenter", "ExperimentID", "Medium", "Timepoint", "Strain")
+
+name_pooled_AaFnPgPiSmuSsob <- flowCore::sampleNames(flowData_pooled_AaFnPgPiSmuSsob)
+Sample_Info_pooled_AaFnPgPiSmuSsob <- cbind(name_pooled_AaFnPgPiSmuSsob, metadata_pooled_AaFnPgPiSmuSsob)
+
+# Plot not working for some reason
+# xyplot(`BL3-A`~`BL1-A`, data = flowData_pooled_AaFnPgPiSmuSsob,
+#        scales = list(y = list(limits = c(0, 15)),
+#                      x = list(limits = c(5, 15))),
+#        axis = axis.default, nbin = 125, main = "Test pooled samples", xlab = "BL1-A", ylab = "BL3-A",
+#        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+cells_AaFnPgPiSmuSsob_pooled <- flowCore::filter(flowData_pooled_AaFnPgPiSmuSsob, polyGate1)
+TotalCount_AaFnPgPiSmuSsob_pooled <- summary(cells_AaFnPgPiSmuSsob_pooled)
+TotalCount_AaFnPgPiSmuSsob_pooled <- toTable(TotalCount_AaFnPgPiSmuSsob_pooled)
+
+fcs_names_AaFnPgPiSmuSsob_pooled <- c("20200512_Fabian_14strainID_BHI2_24h_Aa",
+                                      "20200512_Fabian_14strainID_BHI2_24h_Fn",
+                                      "20200512_Fabian_14strainID_BHI2_24h_Pg",
+                                      "20200512_Fabian_14strainID_BHI2_24h_Pi",
+                                      "20200512_Fabian_14strainID_BHI2_24h_Smu",
+                                      "20200512_Fabian_14strainID_BHI2_24h_Ssob")
+
+#Model_RF_AaFnPgPiSmuSsob_pooled <- Phenoflow::RandomF_FCS(flowData_pooled_AaFnPgPiSmuSsob[fcs_names_AaFnPgPiSmuSsob_pooled], Sample_Info_pooled_AaFnPgPiSmuSsob, sample_col = "name_pooled_AaFnPgPiSmuSsob", target_label = "Strain", downsample = 12328, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
+#saveRDS(object = Model_RF_AaFnPgPiSmuSsob_pooled, file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RandomForest/RF_BHI_8param_AaFnPgPiSmuSsob_pooled.rds")
+Model_RF_AaFnPgPiSmuSsob_pooled <- readRDS(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RandomForest/RF_BHI_8param_AaFnPgPiSmuSsobpooled.rds")
+
+## Make predictions for relevant mixtures and co-cultures in BHI2
+fcs_topre_BHI_AaFnPgPiSmuSsob <- c("20200512_Fabian_14strainID_BHI2_NA_Mix6_NA_1000_SG_C10.fcs",
+                                   "20200512_Fabian_14strainID_BHI2_NA_Mix6_NA_1000_SG_C11.fcs")
+
+flowData_topre_BHI_AaFnPgPiSmuSsob <- flowData_transformed_BHI_gated[fcs_topre_BHI_AaFnPgPiSmuSsob]
+test_pred_BHI_AaFnPgPiSmuSsob_pooled <- RandomF_predict(x = Model_RF_AaFnPgPiSmuSsob_pooled[[1]], new_data = flowData_topre_BHI_AaFnPgPiSmuSsob, cleanFCS = FALSE)
+
+# Export predictions
+test_pred_BHI2_AaFnPgPiSmuSsob_pooled <- left_join(test_pred_BHI_AaFnPgPiSmuSsob_pooled, vol2, by = c("Sample" = "Sample_name"))
+test_pred_BHI2_AaFnPgPiSmuSsob_pooled <- left_join(test_pred_BHI2_AaFnPgPiSmuSsob_pooled, Sample_Info, by = c("Sample" = "name"))
+test_pred_BHI2_AaFnPgPiSmuSsob_pooled <- test_pred_BHI2_AaFnPgPiSmuSsob_pooled %>%
+  mutate(Concentration = (Counts*Dilution)/Volume)
+# Export as csv file
+write.csv2(file = "PredictedCellsAaFnPgPiSmuSsob_pooled.csv", test_pred_BHI2_AaFnPgPiSmuSsob_pooled)
+
+
+# Mix7
+### Model for Aa, An, Av, Fn, Pg, Pi, Sg, Smi, Smu, So, Ssal, Ssan, Ssob and Vp in BHI2
+# Select the fcs files based on which the model will be trained
+flowData_pooled_AllStrains <- FCS_pool(x = flowData_transformed_BHI_gated,
+                                       stub = c("20200512_Fabian_14strainID_BHI2_24h_Aa",
+                                                "20200512_Fabian_14strainID_BHI2_24h_An",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Av",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Fn",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Pg",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Pi",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Sg",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Smi",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Smu",
+                                                "20200512_Fabian_14strainID_BHI2_24h_So",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Ssal",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Ssan",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Ssob",
+                                                "20200512_Fabian_14strainID_BHI2_24h_Vp"))
+
+metadata_pooled_AllStrains <- data.frame(do.call(rbind, lapply(strsplit(flowCore::sampleNames(flowData_pooled_AllStrains), "_"), rbind)))
+colnames(metadata_pooled_AllStrains) <- c("Date", "Experimenter", "ExperimentID", "Medium", "Timepoint", "Strain")
+
+name_pooled_AllStrains <- flowCore::sampleNames(flowData_pooled_AllStrains)
+Sample_Info_pooled_AllStrains <- cbind(name_pooled_AllStrains, metadata_pooled_AllStrains)
+
+# Plot not working for some reason
+# xyplot(`BL3-A`~`BL1-A`, data = flowData_pooled_AllStrains,
+#        scales = list(y = list(limits = c(0, 15)),
+#                      x = list(limits = c(5, 15))),
+#        axis = axis.default, nbin = 125, main = "Test pooled samples", xlab = "BL1-A", ylab = "BL3-A",
+#        par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+cells_AllStrains_pooled <- flowCore::filter(flowData_pooled_AllStrains, polyGate1)
+TotalCount_AllStrains_pooled <- summary(cells_AllStrains_pooled)
+TotalCount_AllStrains_pooled <- toTable(TotalCount_AllStrains_pooled)
+
+fcs_names_AllStrains_pooled <- c("20200512_Fabian_14strainID_BHI2_24h_Aa",
+                                 "20200512_Fabian_14strainID_BHI2_24h_An",
+                                 "20200512_Fabian_14strainID_BHI2_24h_Av",
+                                 "20200512_Fabian_14strainID_BHI2_24h_Fn",
+                                 "20200512_Fabian_14strainID_BHI2_24h_Pg",
+                                 "20200512_Fabian_14strainID_BHI2_24h_Pi",
+                                 "20200512_Fabian_14strainID_BHI2_24h_Sg",
+                                 "20200512_Fabian_14strainID_BHI2_24h_Smi",
+                                 "20200512_Fabian_14strainID_BHI2_24h_Smu",
+                                 "20200512_Fabian_14strainID_BHI2_24h_So",
+                                 "20200512_Fabian_14strainID_BHI2_24h_Ssal",
+                                 "20200512_Fabian_14strainID_BHI2_24h_Ssan",
+                                 "20200512_Fabian_14strainID_BHI2_24h_Ssob",
+                                 "20200512_Fabian_14strainID_BHI2_24h_Vp")
+
+#Model_RF_AllStrains_pooled <- Phenoflow::RandomF_FCS(flowData_pooled_AllStrains[fcs_names_AllStrains_pooled], Sample_Info_pooled_AllStrains, sample_col = "name_pooled_AllStrains", target_label = "Strain", downsample = 12328, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
+#saveRDS(object = Model_RF_AllStrains_pooled, file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RandomForest/RF_BHI_8param_AllStrains_pooled.rds")
+Model_RF_AllStrains_pooled <- readRDS(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RandomForest/RF_BHI_8param_AllStrainspooled.rds")
+
+## Make predictions for relevant mixtures and co-cultures in BHI2
+fcs_topre_BHI_AllStrains <- c("20200512_Fabian_14strainID_BHI2_NA_Mix7_NA_1000_SG_D8.fcs",
+                              "20200512_Fabian_14strainID_BHI2_NA_Mix7_NA_1000_SG_D9.fcs")
+
+flowData_topre_BHI_AllStrains <- flowData_transformed_BHI_gated[fcs_topre_BHI_AllStrains]
+test_pred_BHI_AllStrains_pooled <- RandomF_predict(x = Model_RF_AllStrains_pooled[[1]], new_data = flowData_topre_BHI_AllStrains, cleanFCS = FALSE)
+
+# Export predictions
+test_pred_BHI2_AllStrains_pooled <- left_join(test_pred_BHI_AllStrains_pooled, vol2, by = c("Sample" = "Sample_name"))
+test_pred_BHI2_AllStrains_pooled <- left_join(test_pred_BHI2_AllStrains_pooled, Sample_Info, by = c("Sample" = "name"))
+test_pred_BHI2_AllStrains_pooled <- test_pred_BHI2_AllStrains_pooled %>%
+  mutate(Concentration = (Counts*Dilution)/Volume)
+# Export as csv file
+write.csv2(file = "PredictedCellsAllStrains_pooled.csv", test_pred_BHI2_AllStrains_pooled)
+
+
+## 8.3. Analysis of accuracy ----
+
+# Number of strains vs accuracy
+# Extract accuracy for each model
+modellist <- c("SoFn",
+               "SoFnPg",
+               "SoFnPgVp",
+               "AnAvSgSmiSoSsalSsanVp",
+               "SgSmiSmuSoSsalSsanSsob",
+               "AaFnPgPiSmuSsob",
+               "AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp")
+
+numberstrains <- sapply(modellist, count_capital_letters)
+
+acc_RF <- c(Model_RF_SoFn_pooled[[2]][["overall"]][["Accuracy"]],
+            Model_RF_SoFnPg_pooled[[2]][["overall"]][["Accuracy"]],
+            Model_RF_SoFnPgVp_pooled[[2]][["overall"]][["Accuracy"]],
+            Model_RF_AnAvSgSmiSoSsalSsanVp_pooled[[2]][["overall"]][["Accuracy"]],
+            Model_RF_SgSmiSmuSoSsalSsanSsob_pooled[[2]][["overall"]][["Accuracy"]],
+            Model_RF_AaFnPgPiSmuSsob_pooled[[2]][["overall"]][["Accuracy"]],
+            Model_RF_AllStrains_pooled[[2]][["overall"]][["Accuracy"]])
+
+accuracy_RF <- data.frame(Model = modellist,
+                          NumberStrains = numberstrains,
+                          Accuracy = acc_RF*100,
+                          Method = "RandomForest",
+                          row.names = NULL)
+
+random_guessing <- data.frame(NumberStrains = c(2:14),
+                              Accuracy = (c(1/(2:14)))*100,
+                              Method = "RandomGuessing")
+
+accuracy_RF2 <- dplyr::bind_rows(accuracy_RF, random_guessing)
+accuracy_RF2 <- accuracy_RF2[, c(2:4)]
+
+plot_accuracy_RF <- ggplot(data = accuracy_RF2, aes(x = NumberStrains, y = Accuracy, color = Method))+
+  geom_point(data = subset(accuracy_RF2, Method == "RandomForest"), size = 5) +
+  geom_line(data = subset(accuracy_RF2, Method == "RandomGuessing")) +
+  labs(x = "Number of strains", y = "Accuracy (%)", color = NULL) +
+  scale_color_manual(values = c("RandomForest"= "black", "RandomGuessing"= "darkred"),
+                     labels = c("RandomForest"= "Random Forest", "RandomGuessing" = "Random Guessing")) +
+  paper_theme_fab +
+  scale_y_continuous(limits = c(0, 100)) +
+  scale_x_continuous(limits = c(0, 14), breaks = seq(0, 14, by = 1))
+print(plot_accuracy_RF)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
