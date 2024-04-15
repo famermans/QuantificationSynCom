@@ -5,6 +5,7 @@
 *.jpeg
 *.tiff
 *.csv
+*.RData
 /DADA2
 /RDS_objects
 /FACSVerse
