@@ -1454,9 +1454,9 @@ test_pred_BHI2_AllStrains_pooled <- test_pred_BHI2_AllStrains_pooled %>%
 write.csv2(file = "PredictedCellsAllStrains_pooled.csv", test_pred_BHI2_AllStrains_pooled)
 
 
-## 8.3. Analysis of accuracy ----
+## 8.3. Analysis of performance ----
 
-# Number of strains vs accuracy
+### 8.3.1. Number of strains vs accuracy ----
 # Extract accuracy for each model
 modellist <- c("SoFn",
                "SoFnPg",
@@ -1501,21 +1501,354 @@ plot_accuracy_RF <- ggplot(data = accuracy_RF2, aes(x = NumberStrains, y = Accur
 print(plot_accuracy_RF)
 
 
+### 8.3.2. Performance of predictions ----
+# RMSE (root mean squared error) for predictions
+
+# Theoretical abundance
+theoretical_mocks_rect <- reshape2::dcast(theoretical_mocks, Mix_ID ~ Strain)
+theoretical_mocks_rect[is.na(theoretical_mocks_rect)] <- 0
+
+theoretical_mocks_prop <- theoretical_mocks_rect
+theoretical_mocks_prop[, -c(1)] <- sweep(as.matrix(theoretical_mocks_rect[, -c(1)]), 1, rowSums(theoretical_mocks_rect[, -c(1)]), FUN = "/") %>% 
+  as.data.frame()
+colnames(theoretical_mocks_prop)[colnames(theoretical_mocks_prop) == "Mix_ID"] <- "ID"
+
+theoretical_longer <- tidyr::pivot_longer(theoretical_mocks_prop, cols = -ID, names_to = "Species", values_to = "Actual")
 
 
+# Models trained on 50000 events
+FCM_SoFn <- read.csv(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/PredictionsRF/PredictedCellsSoFn_pooled_50kevents.csv", header = T, sep = ";", stringsAsFactors = F)
+FCM_SoFnPg <- read.csv(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/PredictionsRF/PredictedCellsSoFnPg_pooled_50kevents.csv", header = T, sep = ";", stringsAsFactors = F)
+FCM_SoFnPgVp <- read.csv(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/PredictionsRF/PredictedCellsSoFnPgVp_pooled_50kevents.csv", header = T, sep = ";", stringsAsFactors = F)
+
+# Change , to . in FCM dataframes
+FCM_SoFn$Concentration <- gsub(",", ".", FCM_SoFn$Concentration)
+FCM_SoFnPg$Concentration <- gsub(",", ".", FCM_SoFnPg$Concentration)
+FCM_SoFnPgVp$Concentration <- gsub(",", ".", FCM_SoFnPgVp$Concentration)
+
+FCM_SoFn$Concentration <- as.numeric(FCM_SoFn$Concentration)
+FCM_SoFnPg$Concentration <- as.numeric(FCM_SoFnPg$Concentration)
+FCM_SoFnPgVp$Concentration <- as.numeric(FCM_SoFnPgVp$Concentration)
+
+FCM_SoFn_mean <- FCM_SoFn
+FCM_SoFn_mean$Replicate[is.na(FCM_SoFn_mean$Replicate)] <- "Z"
+FCM_SoFn_mean$Timepoint[is.na(FCM_SoFn_mean$Timepoint)] <- "0h"
+FCM_SoFn_mean <- aggregate(Concentration ~ Predicted_label + Strain + Replicate + Timepoint, data = FCM_SoFn_mean, FUN = mean)
+FCM_SoFn_mean <- subset(FCM_SoFn_mean, Replicate == "Z")
+colnames(FCM_SoFn_mean)[colnames(FCM_SoFn_mean) == "Strain"] <- "ID"
+FCM_SoFn_mean <- FCM_SoFn_mean[, c("ID", "Predicted_label", "Concentration")]
+FCM_SoFn_mean_rect <- reshape2::dcast(FCM_SoFn_mean, ID ~ Predicted_label)
+FCM_SoFn_mean_prop <- FCM_SoFn_mean_rect
+FCM_SoFn_mean_prop[, -c(1)] <- sweep(as.matrix(FCM_SoFn_mean_prop[, -c(1)]), 1, rowSums(FCM_SoFn_mean_prop[, -c(1)]), FUN = "/") %>% 
+  as.data.frame()
+FCM_SoFn_mean_prop$Model <- "SoFn"
+
+FCM_SoFnPg_mean <- FCM_SoFnPg
+FCM_SoFnPg_mean$Replicate[is.na(FCM_SoFnPg_mean$Replicate)] <- "Z"
+FCM_SoFnPg_mean$Timepoint[is.na(FCM_SoFnPg_mean$Timepoint)] <- "0h"
+FCM_SoFnPg_mean <- aggregate(Concentration ~ Predicted_label + Strain + Replicate + Timepoint, data = FCM_SoFnPg_mean, FUN = mean)
+FCM_SoFnPg_mean <- subset(FCM_SoFnPg_mean, Replicate == "Z")
+colnames(FCM_SoFnPg_mean)[colnames(FCM_SoFnPg_mean) == "Strain"] <- "ID"
+FCM_SoFnPg_mean <- FCM_SoFnPg_mean[, c("ID", "Predicted_label", "Concentration")]
+FCM_SoFnPg_mean_rect <- reshape2::dcast(FCM_SoFnPg_mean, ID ~ Predicted_label)
+FCM_SoFnPg_mean_prop <- FCM_SoFnPg_mean_rect
+FCM_SoFnPg_mean_prop[, -c(1)] <- sweep(as.matrix(FCM_SoFnPg_mean_prop[, -c(1)]), 1, rowSums(FCM_SoFnPg_mean_prop[, -c(1)]), FUN = "/") %>% 
+  as.data.frame()
+FCM_SoFnPg_mean_prop$Model <- "SoFnPg"
+
+FCM_SoFnPgVp_mean <- FCM_SoFnPgVp
+FCM_SoFnPgVp_mean$Replicate[is.na(FCM_SoFnPgVp_mean$Replicate)] <- "Z"
+FCM_SoFnPgVp_mean$Timepoint[is.na(FCM_SoFnPgVp_mean$Timepoint)] <- "0h"
+FCM_SoFnPgVp_mean <- aggregate(Concentration ~ Predicted_label + Strain + Replicate + Timepoint, data = FCM_SoFnPgVp_mean, FUN = mean)
+FCM_SoFnPgVp_mean <- subset(FCM_SoFnPgVp_mean, Replicate == "Z")
+colnames(FCM_SoFnPgVp_mean)[colnames(FCM_SoFnPgVp_mean) == "Strain"] <- "ID"
+FCM_SoFnPgVp_mean <- FCM_SoFnPgVp_mean[, c("ID", "Predicted_label", "Concentration")]
+FCM_SoFnPgVp_mean_rect <- reshape2::dcast(FCM_SoFnPgVp_mean, ID ~ Predicted_label)
+FCM_SoFnPgVp_mean_prop <- FCM_SoFnPgVp_mean_rect
+FCM_SoFnPgVp_mean_prop[, -c(1)] <- sweep(as.matrix(FCM_SoFnPgVp_mean_prop[, -c(1)]), 1, rowSums(FCM_SoFnPgVp_mean_prop[, -c(1)]), FUN = "/") %>% 
+  as.data.frame()
+FCM_SoFnPgVp_mean_prop$Model <- "SoFnPgVp"
+
+FCM_mean_prop_50k <- dplyr::bind_rows(FCM_SoFn_mean_prop, FCM_SoFnPg_mean_prop, FCM_SoFnPgVp_mean_prop)
+FCM_mean_prop_50k[is.na(FCM_mean_prop_50k)] <- 0
+
+FCM_SoFn_mean_prop_50k <- subset(FCM_mean_prop_50k, Model == "SoFn")
+FCM_SoFn_mean_prop_50k <- FCM_SoFn_mean_prop_50k[, c("ID", "So", "Fn", "Pg", "Vp")]
+FCM_SoFnPg_mean_prop_50k <- subset(FCM_mean_prop_50k, Model == "SoFnPg")
+FCM_SoFnPg_mean_prop_50k <- FCM_SoFnPg_mean_prop_50k[, c("ID", "So", "Fn", "Pg", "Vp")]
+FCM_SoFnPgVp_mean_prop_50k <- subset(FCM_mean_prop_50k, Model == "SoFnPgVp")
+FCM_SoFnPgVp_mean_prop_50k <- FCM_SoFnPgVp_mean_prop_50k[, c("ID", "So", "Fn", "Pg", "Vp")]
+
+# Calculation RSME
+FCM_SoFn_50k_longer <- tidyr::pivot_longer(FCM_SoFn_mean_prop_50k, cols = -ID, names_to = "Species", values_to = "Predicted")
+merged_SoFn_50k <- merge(FCM_SoFn_50k_longer, theoretical_longer, by = c("ID", "Species"))
+IDs_SoFn <- unique(merged_SoFn_50k$ID)
+RMSE_SoFn_50k <- data.frame(ID = IDs_SoFn,
+                        RMSE_SoFn = numeric(length(IDs_SoFn)))
+
+for (i in seq_along(IDs_SoFn)) {
+  ID <- IDs_SoFn[i]
+  subset_df <- merged_SoFn_50k[merged_SoFn_50k$ID == ID, ]
+  RMSE_SoFn_50k$RMSE_SoFn[i] <- sqrt(mean((subset_df$Predicted - subset_df$Actual)^2))
+}
 
 
+FCM_SoFnPg_50k_longer <- tidyr::pivot_longer(FCM_SoFnPg_mean_prop_50k, cols = -ID, names_to = "Species", values_to = "Predicted")
+merged_SoFnPg_50k <- merge(FCM_SoFnPg_50k_longer, theoretical_longer, by = c("ID", "Species"))
+IDs_SoFnPg <- unique(merged_SoFnPg_50k$ID)
+RMSE_SoFnPg_50k <- data.frame(ID = IDs_SoFnPg,
+                          RMSE_SoFnPg = numeric(length(IDs_SoFnPg)))
+
+for (i in seq_along(IDs_SoFnPg)) {
+  ID <- IDs_SoFnPg[i]
+  subset_df <- merged_SoFnPg_50k[merged_SoFnPg_50k$ID == ID, ]
+  RMSE_SoFnPg_50k$RMSE_SoFnPg[i] <- sqrt(mean((subset_df$Predicted - subset_df$Actual)^2))
+}
+
+FCM_SoFnPgVp_50k_longer <- tidyr::pivot_longer(FCM_SoFnPgVp_mean_prop_50k, cols = -ID, names_to = "Species", values_to = "Predicted")
+merged_SoFnPgVp_50k <- merge(FCM_SoFnPgVp_50k_longer, theoretical_longer, by = c("ID", "Species"))
+IDs_SoFnPgVp <- unique(merged_SoFnPgVp_50k$ID)
+RMSE_SoFnPgVp_50k <- data.frame(ID = IDs_SoFnPgVp,
+                            RMSE_SoFnPgVp = numeric(length(IDs_SoFnPgVp)))
+
+for (i in seq_along(IDs_SoFnPgVp)) {
+  ID <- IDs_SoFnPgVp[i]
+  subset_df <- merged_SoFnPgVp_50k[merged_SoFnPgVp_50k$ID == ID, ]
+  RMSE_SoFnPgVp_50k$RMSE_SoFnPgVp[i] <- sqrt(mean((subset_df$Predicted - subset_df$Actual)^2))
+}
+
+RMSE_50k <- merge(RMSE_SoFn_50k, RMSE_SoFnPg_50k, by = "ID", all = TRUE)
+RMSE_50k <- merge(RMSE_50k, RMSE_SoFnPgVp_50k, by = "ID", all = TRUE)
+
+#saveRDS(object = RMSE_50k, file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RDS_objects/RMSE_FCM_50k.rds")
 
 
+# Models trained on 12328 events
+FCM_SoFn <- read.csv(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/PredictionsRF/PredictedCellsSoFn_pooled.csv", header = T, sep = ";", stringsAsFactors = F)
+FCM_SoFnPg <- read.csv(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/PredictionsRF/PredictedCellsSoFnPg_pooled.csv", header = T, sep = ";", stringsAsFactors = F)
+FCM_SoFnPgVp <- read.csv(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/PredictionsRF/PredictedCellsSoFnPgVp_pooled.csv", header = T, sep = ";", stringsAsFactors = F)
+FCM_AnAvSgSmiSoSsalSsanVp <- read.csv(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/PredictionsRF/PredictedCellsAnAvSgSmiSoSsalSsanVp_pooled.csv", header = T, sep = ";", stringsAsFactors = F)
+FCM_SgSmiSmuSoSsalSsanSsob <- read.csv(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/PredictionsRF/PredictedCellsSgSmiSmuSoSsalSsanSsob_pooled.csv", header = T, sep = ";", stringsAsFactors = F)
+FCM_AaFnPgPiSmuSsob <- read.csv(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/PredictionsRF/PredictedCellsAaFnPgPiSmuSsob_pooled.csv", header = T, sep = ";", stringsAsFactors = F)
+FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp <- read.csv(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/PredictionsRF/PredictedCellsAllStrains_pooled.csv", header = T, sep = ";", stringsAsFactors = F)
+
+# Change , to . in FCM dataframes
+FCM_SoFn$Concentration <- gsub(",", ".", FCM_SoFn$Concentration)
+FCM_SoFnPg$Concentration <- gsub(",", ".", FCM_SoFnPg$Concentration)
+FCM_SoFnPgVp$Concentration <- gsub(",", ".", FCM_SoFnPgVp$Concentration)
+FCM_AnAvSgSmiSoSsalSsanVp$Concentration <- gsub(",", ".", FCM_AnAvSgSmiSoSsalSsanVp$Concentration)
+FCM_SgSmiSmuSoSsalSsanSsob$Concentration <- gsub(",", ".", FCM_SgSmiSmuSoSsalSsanSsob$Concentration)
+FCM_AaFnPgPiSmuSsob$Concentration <- gsub(",", ".", FCM_AaFnPgPiSmuSsob$Concentration)
+FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp$Concentration <- gsub(",", ".", FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp$Concentration)
+
+FCM_SoFn$Concentration <- as.numeric(FCM_SoFn$Concentration)
+FCM_SoFnPg$Concentration <- as.numeric(FCM_SoFnPg$Concentration)
+FCM_SoFnPgVp$Concentration <- as.numeric(FCM_SoFnPgVp$Concentration)
+FCM_AnAvSgSmiSoSsalSsanVp$Concentration <- as.numeric(FCM_AnAvSgSmiSoSsalSsanVp$Concentration)
+FCM_SgSmiSmuSoSsalSsanSsob$Concentration <- as.numeric(FCM_SgSmiSmuSoSsalSsanSsob$Concentration)
+FCM_AaFnPgPiSmuSsob$Concentration <- as.numeric(FCM_AaFnPgPiSmuSsob$Concentration)
+FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp$Concentration <- as.numeric(FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp$Concentration)
+
+FCM_SoFn_mean <- FCM_SoFn
+FCM_SoFn_mean$Replicate[is.na(FCM_SoFn_mean$Replicate)] <- "Z"
+FCM_SoFn_mean$Timepoint[is.na(FCM_SoFn_mean$Timepoint)] <- "0h"
+FCM_SoFn_mean <- aggregate(Concentration ~ Predicted_label + Strain + Replicate + Timepoint, data = FCM_SoFn_mean, FUN = mean)
+FCM_SoFn_mean <- subset(FCM_SoFn_mean, Replicate == "Z")
+colnames(FCM_SoFn_mean)[colnames(FCM_SoFn_mean) == "Strain"] <- "ID"
+FCM_SoFn_mean <- FCM_SoFn_mean[, c("ID", "Predicted_label", "Concentration")]
+FCM_SoFn_mean_rect <- reshape2::dcast(FCM_SoFn_mean, ID ~ Predicted_label)
+FCM_SoFn_mean_prop <- FCM_SoFn_mean_rect
+FCM_SoFn_mean_prop[, -c(1)] <- sweep(as.matrix(FCM_SoFn_mean_prop[, -c(1)]), 1, rowSums(FCM_SoFn_mean_prop[, -c(1)]), FUN = "/") %>% 
+  as.data.frame()
+#FCM_SoFn_mean_prop$Model <- "SoFn"
+
+FCM_SoFnPg_mean <- FCM_SoFnPg
+FCM_SoFnPg_mean$Replicate[is.na(FCM_SoFnPg_mean$Replicate)] <- "Z"
+FCM_SoFnPg_mean$Timepoint[is.na(FCM_SoFnPg_mean$Timepoint)] <- "0h"
+FCM_SoFnPg_mean <- aggregate(Concentration ~ Predicted_label + Strain + Replicate + Timepoint, data = FCM_SoFnPg_mean, FUN = mean)
+FCM_SoFnPg_mean <- subset(FCM_SoFnPg_mean, Replicate == "Z")
+colnames(FCM_SoFnPg_mean)[colnames(FCM_SoFnPg_mean) == "Strain"] <- "ID"
+FCM_SoFnPg_mean <- FCM_SoFnPg_mean[, c("ID", "Predicted_label", "Concentration")]
+FCM_SoFnPg_mean_rect <- reshape2::dcast(FCM_SoFnPg_mean, ID ~ Predicted_label)
+FCM_SoFnPg_mean_prop <- FCM_SoFnPg_mean_rect
+FCM_SoFnPg_mean_prop[, -c(1)] <- sweep(as.matrix(FCM_SoFnPg_mean_prop[, -c(1)]), 1, rowSums(FCM_SoFnPg_mean_prop[, -c(1)]), FUN = "/") %>% 
+  as.data.frame()
+#FCM_SoFnPg_mean_prop$Model <- "SoFnPg"
+
+FCM_SoFnPgVp_mean <- FCM_SoFnPgVp
+FCM_SoFnPgVp_mean$Replicate[is.na(FCM_SoFnPgVp_mean$Replicate)] <- "Z"
+FCM_SoFnPgVp_mean$Timepoint[is.na(FCM_SoFnPgVp_mean$Timepoint)] <- "0h"
+FCM_SoFnPgVp_mean <- aggregate(Concentration ~ Predicted_label + Strain + Replicate + Timepoint, data = FCM_SoFnPgVp_mean, FUN = mean)
+FCM_SoFnPgVp_mean <- subset(FCM_SoFnPgVp_mean, Replicate == "Z")
+colnames(FCM_SoFnPgVp_mean)[colnames(FCM_SoFnPgVp_mean) == "Strain"] <- "ID"
+FCM_SoFnPgVp_mean <- FCM_SoFnPgVp_mean[, c("ID", "Predicted_label", "Concentration")]
+FCM_SoFnPgVp_mean_rect <- reshape2::dcast(FCM_SoFnPgVp_mean, ID ~ Predicted_label)
+FCM_SoFnPgVp_mean_prop <- FCM_SoFnPgVp_mean_rect
+FCM_SoFnPgVp_mean_prop[, -c(1)] <- sweep(as.matrix(FCM_SoFnPgVp_mean_prop[, -c(1)]), 1, rowSums(FCM_SoFnPgVp_mean_prop[, -c(1)]), FUN = "/") %>% 
+  as.data.frame()
+#FCM_SoFnPgVp_mean_prop$Model <- "SoFnPgVp"
+
+FCM_AnAvSgSmiSoSsalSsanVp_mean <- FCM_AnAvSgSmiSoSsalSsanVp
+FCM_AnAvSgSmiSoSsalSsanVp_mean$Replicate[is.na(FCM_AnAvSgSmiSoSsalSsanVp_mean$Replicate)] <- "Z"
+FCM_AnAvSgSmiSoSsalSsanVp_mean$Timepoint[is.na(FCM_AnAvSgSmiSoSsalSsanVp_mean$Timepoint)] <- "0h"
+FCM_AnAvSgSmiSoSsalSsanVp_mean <- aggregate(Concentration ~ Predicted_label + Strain + Replicate + Timepoint, data = FCM_AnAvSgSmiSoSsalSsanVp_mean, FUN = mean)
+FCM_AnAvSgSmiSoSsalSsanVp_mean <- subset(FCM_AnAvSgSmiSoSsalSsanVp_mean, Replicate == "Z")
+colnames(FCM_AnAvSgSmiSoSsalSsanVp_mean)[colnames(FCM_AnAvSgSmiSoSsalSsanVp_mean) == "Strain"] <- "ID"
+FCM_AnAvSgSmiSoSsalSsanVp_mean <- FCM_AnAvSgSmiSoSsalSsanVp_mean[, c("ID", "Predicted_label", "Concentration")]
+FCM_AnAvSgSmiSoSsalSsanVp_mean_rect <- reshape2::dcast(FCM_AnAvSgSmiSoSsalSsanVp_mean, ID ~ Predicted_label)
+FCM_AnAvSgSmiSoSsalSsanVp_mean_prop <- FCM_AnAvSgSmiSoSsalSsanVp_mean_rect
+FCM_AnAvSgSmiSoSsalSsanVp_mean_prop[, -c(1)] <- sweep(as.matrix(FCM_AnAvSgSmiSoSsalSsanVp_mean_prop[, -c(1)]), 1, rowSums(FCM_AnAvSgSmiSoSsalSsanVp_mean_prop[, -c(1)]), FUN = "/") %>% 
+  as.data.frame()
+#FCM_AnAvSgSmiSoSsalSsanVp_mean_prop$Model <- "AnAvSgSmiSoSsalSsanVp"
+
+FCM_SgSmiSmuSoSsalSsanSsob_mean <- FCM_SgSmiSmuSoSsalSsanSsob
+FCM_SgSmiSmuSoSsalSsanSsob_mean$Replicate[is.na(FCM_SgSmiSmuSoSsalSsanSsob_mean$Replicate)] <- "Z"
+FCM_SgSmiSmuSoSsalSsanSsob_mean$Timepoint[is.na(FCM_SgSmiSmuSoSsalSsanSsob_mean$Timepoint)] <- "0h"
+FCM_SgSmiSmuSoSsalSsanSsob_mean <- aggregate(Concentration ~ Predicted_label + Strain + Replicate + Timepoint, data = FCM_SgSmiSmuSoSsalSsanSsob_mean, FUN = mean)
+FCM_SgSmiSmuSoSsalSsanSsob_mean <- subset(FCM_SgSmiSmuSoSsalSsanSsob_mean, Replicate == "Z")
+colnames(FCM_SgSmiSmuSoSsalSsanSsob_mean)[colnames(FCM_SgSmiSmuSoSsalSsanSsob_mean) == "Strain"] <- "ID"
+FCM_SgSmiSmuSoSsalSsanSsob_mean <- FCM_SgSmiSmuSoSsalSsanSsob_mean[, c("ID", "Predicted_label", "Concentration")]
+FCM_SgSmiSmuSoSsalSsanSsob_mean_rect <- reshape2::dcast(FCM_SgSmiSmuSoSsalSsanSsob_mean, ID ~ Predicted_label)
+FCM_SgSmiSmuSoSsalSsanSsob_mean_prop <- FCM_SgSmiSmuSoSsalSsanSsob_mean_rect
+FCM_SgSmiSmuSoSsalSsanSsob_mean_prop[, -c(1)] <- sweep(as.matrix(FCM_SgSmiSmuSoSsalSsanSsob_mean_prop[, -c(1)]), 1, rowSums(FCM_SgSmiSmuSoSsalSsanSsob_mean_prop[, -c(1)]), FUN = "/") %>% 
+  as.data.frame()
+#FCM_SgSmiSmuSoSsalSsanSsob_mean_prop$Model <- "SgSmiSmuSoSsalSsanSsob"
+
+FCM_AaFnPgPiSmuSsob_mean <- FCM_AaFnPgPiSmuSsob
+FCM_AaFnPgPiSmuSsob_mean$Replicate[is.na(FCM_AaFnPgPiSmuSsob_mean$Replicate)] <- "Z"
+FCM_AaFnPgPiSmuSsob_mean$Timepoint[is.na(FCM_AaFnPgPiSmuSsob_mean$Timepoint)] <- "0h"
+FCM_AaFnPgPiSmuSsob_mean <- aggregate(Concentration ~ Predicted_label + Strain + Replicate + Timepoint, data = FCM_AaFnPgPiSmuSsob_mean, FUN = mean)
+FCM_AaFnPgPiSmuSsob_mean <- subset(FCM_AaFnPgPiSmuSsob_mean, Replicate == "Z")
+colnames(FCM_AaFnPgPiSmuSsob_mean)[colnames(FCM_AaFnPgPiSmuSsob_mean) == "Strain"] <- "ID"
+FCM_AaFnPgPiSmuSsob_mean <- FCM_AaFnPgPiSmuSsob_mean[, c("ID", "Predicted_label", "Concentration")]
+FCM_AaFnPgPiSmuSsob_mean_rect <- reshape2::dcast(FCM_AaFnPgPiSmuSsob_mean, ID ~ Predicted_label)
+FCM_AaFnPgPiSmuSsob_mean_prop <- FCM_AaFnPgPiSmuSsob_mean_rect
+FCM_AaFnPgPiSmuSsob_mean_prop[, -c(1)] <- sweep(as.matrix(FCM_AaFnPgPiSmuSsob_mean_prop[, -c(1)]), 1, rowSums(FCM_AaFnPgPiSmuSsob_mean_prop[, -c(1)]), FUN = "/") %>% 
+  as.data.frame()
+#FCM_AaFnPgPiSmuSsob_mean_prop$Model <- "AaFnPgPiSmuSsob"
+
+FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp_mean <- FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp
+FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp_mean$Replicate[is.na(FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp_mean$Replicate)] <- "Z"
+FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp_mean$Timepoint[is.na(FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp_mean$Timepoint)] <- "0h"
+FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp_mean <- aggregate(Concentration ~ Predicted_label + Strain + Replicate + Timepoint, data = FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp_mean, FUN = mean)
+FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp_mean <- subset(FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp_mean, Replicate == "Z")
+colnames(FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp_mean)[colnames(FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp_mean) == "Strain"] <- "ID"
+FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp_mean <- FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp_mean[, c("ID", "Predicted_label", "Concentration")]
+FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp_mean_rect <- reshape2::dcast(FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp_mean, ID ~ Predicted_label)
+FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp_mean_prop <- FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp_mean_rect
+FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp_mean_prop[, -c(1)] <- sweep(as.matrix(FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp_mean_prop[, -c(1)]), 1, rowSums(FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp_mean_prop[, -c(1)]), FUN = "/") %>% 
+  as.data.frame()
+#FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp_mean_prop$Model <- "AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp"
+
+# FCM_mean_prop <- dplyr::bind_rows(FCM_SoFn_mean_prop,
+#                                   FCM_SoFnPg_mean_prop,
+#                                   FCM_SoFnPgVp_mean_prop,
+#                                   FCM_AnAvSgSmiSoSsalSsanVp_mean_prop,
+#                                   FCM_SgSmiSmuSoSsalSsanSsob_mean_prop,
+#                                   FCM_AaFnPgPiSmuSsob_mean_prop,
+#                                   FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp_mean_prop)
+# FCM_mean_prop[is.na(FCM_mean_prop)] <- 0
+
+# Calculation RSME
+FCM_SoFn_longer <- tidyr::pivot_longer(FCM_SoFn_mean_prop, cols = -ID, names_to = "Species", values_to = "Predicted")
+merged_SoFn <- merge(FCM_SoFn_longer, theoretical_longer, by = c("ID", "Species"))
+IDs_SoFn <- unique(merged_SoFn$ID)
+RMSE_SoFn <- data.frame(ID = IDs_SoFn,
+                        RMSE_SoFn = numeric(length(IDs_SoFn)))
+
+for (i in seq_along(IDs_SoFn)) {
+  ID <- IDs_SoFn[i]
+  subset_df <- merged_SoFn[merged_SoFn$ID == ID, ]
+  RMSE_SoFn$RMSE_SoFn[i] <- sqrt(mean((subset_df$Predicted - subset_df$Actual)^2))
+}
 
 
+FCM_SoFnPg_longer <- tidyr::pivot_longer(FCM_SoFnPg_mean_prop, cols = -ID, names_to = "Species", values_to = "Predicted")
+merged_SoFnPg <- merge(FCM_SoFnPg_longer, theoretical_longer, by = c("ID", "Species"))
+IDs_SoFnPg <- unique(merged_SoFnPg$ID)
+RMSE_SoFnPg <- data.frame(ID = IDs_SoFnPg,
+                          RMSE_SoFnPg = numeric(length(IDs_SoFnPg)))
+
+for (i in seq_along(IDs_SoFnPg)) {
+  ID <- IDs_SoFnPg[i]
+  subset_df <- merged_SoFnPg[merged_SoFnPg$ID == ID, ]
+  RMSE_SoFnPg$RMSE_SoFnPg[i] <- sqrt(mean((subset_df$Predicted - subset_df$Actual)^2))
+}
 
 
+FCM_SoFnPgVp_longer <- tidyr::pivot_longer(FCM_SoFnPgVp_mean_prop, cols = -ID, names_to = "Species", values_to = "Predicted")
+merged_SoFnPgVp <- merge(FCM_SoFnPgVp_longer, theoretical_longer, by = c("ID", "Species"))
+IDs_SoFnPgVp <- unique(merged_SoFnPgVp$ID)
+RMSE_SoFnPgVp <- data.frame(ID = IDs_SoFnPgVp,
+                            RMSE_SoFnPgVp = numeric(length(IDs_SoFnPgVp)))
+
+for (i in seq_along(IDs_SoFnPgVp)) {
+  ID <- IDs_SoFnPgVp[i]
+  subset_df <- merged_SoFnPgVp[merged_SoFnPgVp$ID == ID, ]
+  RMSE_SoFnPgVp$RMSE_SoFnPgVp[i] <- sqrt(mean((subset_df$Predicted - subset_df$Actual)^2))
+}
 
 
+FCM_AnAvSgSmiSoSsalSsanVp_longer <- tidyr::pivot_longer(FCM_AnAvSgSmiSoSsalSsanVp_mean_prop, cols = -ID, names_to = "Species", values_to = "Predicted")
+merged_AnAvSgSmiSoSsalSsanVp <- merge(FCM_AnAvSgSmiSoSsalSsanVp_longer, theoretical_longer, by = c("ID", "Species"))
+IDs_AnAvSgSmiSoSsalSsanVp <- unique(merged_AnAvSgSmiSoSsalSsanVp$ID)
+RMSE_AnAvSgSmiSoSsalSsanVp <- data.frame(ID = IDs_AnAvSgSmiSoSsalSsanVp,
+                                         RMSE_AnAvSgSmiSoSsalSsanVp = numeric(length(IDs_AnAvSgSmiSoSsalSsanVp)))
+
+for (i in seq_along(IDs_AnAvSgSmiSoSsalSsanVp)) {
+  ID <- IDs_AnAvSgSmiSoSsalSsanVp[i]
+  subset_df <- merged_AnAvSgSmiSoSsalSsanVp[merged_AnAvSgSmiSoSsalSsanVp$ID == ID, ]
+  RMSE_AnAvSgSmiSoSsalSsanVp$RMSE_AnAvSgSmiSoSsalSsanVp[i] <- sqrt(mean((subset_df$Predicted - subset_df$Actual)^2))
+}
 
 
+FCM_SgSmiSmuSoSsalSsanSsob_longer <- tidyr::pivot_longer(FCM_SgSmiSmuSoSsalSsanSsob_mean_prop, cols = -ID, names_to = "Species", values_to = "Predicted")
+merged_SgSmiSmuSoSsalSsanSsob <- merge(FCM_SgSmiSmuSoSsalSsanSsob_longer, theoretical_longer, by = c("ID", "Species"))
+IDs_SgSmiSmuSoSsalSsanSsob <- unique(merged_SgSmiSmuSoSsalSsanSsob$ID)
+RMSE_SgSmiSmuSoSsalSsanSsob <- data.frame(ID = IDs_SgSmiSmuSoSsalSsanSsob,
+                                          RMSE_SgSmiSmuSoSsalSsanSsob = numeric(length(IDs_SgSmiSmuSoSsalSsanSsob)))
 
+for (i in seq_along(IDs_SgSmiSmuSoSsalSsanSsob)) {
+  ID <- IDs_SgSmiSmuSoSsalSsanSsob[i]
+  subset_df <- merged_SgSmiSmuSoSsalSsanSsob[merged_SgSmiSmuSoSsalSsanSsob$ID == ID, ]
+  RMSE_SgSmiSmuSoSsalSsanSsob$RMSE_SgSmiSmuSoSsalSsanSsob[i] <- sqrt(mean((subset_df$Predicted - subset_df$Actual)^2))
+}
+
+
+FCM_AaFnPgPiSmuSsob_longer <- tidyr::pivot_longer(FCM_AaFnPgPiSmuSsob_mean_prop, cols = -ID, names_to = "Species", values_to = "Predicted")
+merged_AaFnPgPiSmuSsob <- merge(FCM_AaFnPgPiSmuSsob_longer, theoretical_longer, by = c("ID", "Species"))
+IDs_AaFnPgPiSmuSsob <- unique(merged_AaFnPgPiSmuSsob$ID)
+RMSE_AaFnPgPiSmuSsob <- data.frame(ID = IDs_AaFnPgPiSmuSsob,
+                                   RMSE_AaFnPgPiSmuSsob = numeric(length(IDs_AaFnPgPiSmuSsob)))
+
+for (i in seq_along(IDs_AaFnPgPiSmuSsob)) {
+  ID <- IDs_AaFnPgPiSmuSsob[i]
+  subset_df <- merged_AaFnPgPiSmuSsob[merged_AaFnPgPiSmuSsob$ID == ID, ]
+  RMSE_AaFnPgPiSmuSsob$RMSE_AaFnPgPiSmuSsob[i] <- sqrt(mean((subset_df$Predicted - subset_df$Actual)^2))
+}
+
+
+FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp_longer <- tidyr::pivot_longer(FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp_mean_prop, cols = -ID, names_to = "Species", values_to = "Predicted")
+merged_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp <- merge(FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp_longer, theoretical_longer, by = c("ID", "Species"))
+IDs_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp <- unique(merged_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp$ID)
+RMSE_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp <- data.frame(ID = IDs_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp,
+                                                        RMSE_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp = numeric(length(IDs_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp)))
+
+for (i in seq_along(IDs_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp)) {
+  ID <- IDs_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp[i]
+  subset_df <- merged_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp[merged_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp$ID == ID, ]
+  RMSE_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp$RMSE_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp[i] <- sqrt(mean((subset_df$Predicted - subset_df$Actual)^2))
+}
+
+
+RMSE <- merge(RMSE_SoFn, RMSE_SoFnPg, by = "ID", all = TRUE)
+RMSE <- merge(RMSE, RMSE_SoFnPgVp, by = "ID", all = TRUE)
+RMSE <- merge(RMSE, RMSE_AnAvSgSmiSoSsalSsanVp, by = "ID", all = TRUE)
+RMSE <- merge(RMSE, RMSE_SgSmiSmuSoSsalSsanSsob, by = "ID", all = TRUE)
+RMSE <- merge(RMSE, RMSE_AaFnPgPiSmuSsob, by = "ID", all = TRUE)
+RMSE <- merge(RMSE, RMSE_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp, by = "ID", all = TRUE)
+
+#saveRDS(object = RMSE, file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RDS_objects/RMSE_FCM.rds")
 
 
 
