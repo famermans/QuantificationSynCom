@@ -197,7 +197,49 @@ all_data2_copycorrected <- subset(all_data2, Technique != "Illumina")
 all_data2_copycorrected <- dplyr::bind_rows(all_data2_copycorrected, illumina_prop_copycorrected)
 
 
-# 4. Visualization ----
+# 4. Calculate performance mocks compared to theoretical ----
+
+# Calculate RMSE
+# Format data theoretical
+theoretical_longer <- tidyr::pivot_longer(theoretical_mocks_prop[, c(1:14, 16)], cols = -ID, names_to = "Species", values_to = "Actual")
+
+# FCM
+RMSE_FCM <- readRDS(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RDS_objects/RSME_FCM_50k.rds")
+
+# qPCR
+qPCR_longer <- tidyr::pivot_longer(qPCR_mocks_means_prop[, c(1:5)], cols = -ID, names_to = "Species", values_to = "qPCR")
+
+merged_qPCR <- merge(qPCR_longer, theoretical_longer, by = c("ID", "Species"))
+
+IDs_qPCR <- unique(merged_qPCR$ID)
+RMSE_qPCR <- data.frame(ID = IDs_qPCR,
+                        RMSE_qPCR = numeric(length(IDs_qPCR)))
+
+for (i in seq_along(IDs_qPCR)) {
+  ID <- IDs_qPCR[i]
+  subset_df <- merged_qPCR[merged_qPCR$ID == ID, ]
+  RMSE_qPCR$RMSE_qPCR[i] <- sqrt(mean((subset_df$qPCR - subset_df$Actual)^2))
+}
+
+
+# Illumina
+illumina_mock_prop <- subset(illumina_prop_copycorrected, Type == "Mock")
+illumina_longer <- tidyr::pivot_longer(illumina_mock_prop[, c(1:4, 6)], cols = -ID, names_to = "Species", values_to = "illumina")
+
+merged_illumina <- merge(illumina_longer, theoretical_longer, by = c("ID", "Species"))
+
+IDs_illumina <- unique(merged_illumina$ID)
+RMSE_illumina <- data.frame(ID = IDs_illumina,
+                            RMSE_illumina = numeric(length(IDs_illumina)))
+
+for (i in seq_along(IDs_illumina)) {
+  ID <- IDs_illumina[i]
+  subset_df <- merged_illumina[merged_illumina$ID == ID, ]
+  RMSE_illumina$RMSE_illumina[i] <- sqrt(mean((subset_df$illumina - subset_df$Actual)^2))
+}
+
+
+# 5. Visualization ----
 
 all_data_melted <- reshape2::melt(all_data, id.vars = c("ID", "Type", "Technique"), variable.name = c("Strain"), value.name = c("Relative_abundance"))
 all_data2_melted <- reshape2::melt(all_data2, id.vars = c("ID", "Type", "Technique"), variable.name = c("Strain"), value.name = c("Relative_abundance"))
