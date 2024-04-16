@@ -25,6 +25,8 @@ library("tidyverse")
 seed <- 777
 set.seed(seed)
 
+source(file = "/Projects1/Fabian/paper_theme_fab.R")
+
 
 # 2. Loading data ----
 
@@ -35,13 +37,11 @@ illumina <- readRDS(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionF
 metadata_illumina <- readxl::read_excel("/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/DADA2/Metadata_LGC_NGS3818.xlsx", sheet = "Sheet1") %>% 
   as.data.frame()
 
-FCM_SoFn <- read.csv(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/PredictionsRF/PredictedCellsSoFn_pooled.csv", header = T, sep = ";", stringsAsFactors = F)
-FCM_SoFnPg <- read.csv(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/PredictionsRF/PredictedCellsSoFnPg_pooled.csv", header = T, sep = ";", stringsAsFactors = F)
-FCM_SoFnPgVp <- read.csv(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/PredictionsRF/PredictedCellsSoFnPgVp_pooled.csv", header = T, sep = ";", stringsAsFactors = F)
+FCM_SoFn <- read.csv(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/PredictionsRF/PredictedCellsSoFn_pooled_50kevents.csv", header = T, sep = ";", stringsAsFactors = F)
+FCM_SoFnPg <- read.csv(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/PredictionsRF/PredictedCellsSoFnPg_pooled_50kevents.csv", header = T, sep = ";", stringsAsFactors = F)
+FCM_SoFnPgVp <- read.csv(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/PredictionsRF/PredictedCellsSoFnPgVp_pooled_50kevents.csv", header = T, sep = ";", stringsAsFactors = F)
 
 theoretical_mocks <- readRDS(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RDS_objects/theoretical_mocks.rds")
-
-source(file = "/Projects1/Fabian/paper_theme_fab.R")
 
 # Change , to . in FCM dataframes
 FCM_SoFn$Concentration <- gsub(",", ".", FCM_SoFn$Concentration)
@@ -55,6 +55,7 @@ FCM_SoFnPgVp$Concentration <- as.numeric(FCM_SoFnPgVp$Concentration)
 
 # 3. Calculate means, relative abundances and format data into one data frame ----
 
+## 3.1. 50k cells ----
 theoretical_mocks_rect <- reshape2::dcast(theoretical_mocks, Mix_ID ~ Strain)
 theoretical_mocks_rect$Technique <- "Theoretical"
 theoretical_mocks_rect[is.na(theoretical_mocks_rect)] <- 0
@@ -196,6 +197,26 @@ illumina_prop_copycorrected[, -c(5:7)] <- sweep(as.matrix(illumina_prop_copycorr
 all_data2_copycorrected <- subset(all_data2, Technique != "Illumina")
 all_data2_copycorrected <- dplyr::bind_rows(all_data2_copycorrected, illumina_prop_copycorrected)
 
+## 3.2. Pooled models FCM ----
+FCM_mean_prop_12k <- readRDS(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RDS_objects/FCM_mean_prop_12328cells.rds")
+
+ID_models <- data.frame(ID = c("Mix1", "Mix2", "Mix3", "Mix4", "Mix5", "Mix6", "Mix7", "Mix8", "Mix9"),
+                        Model = c("SoFn", "SoFnPg", "SoFnPgVp", "AnAvSgSmiSoSsalSsanVp", "SgSmiSmuSoSsalSsanSsob", "AaFnPgPiSmuSsob", "AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp", "SoFn", "SoFn"))
+
+FCM_mean_prop_12k_2 <- FCM_mean_prop_12k[(FCM_mean_prop_12k$ID == "Mix1" & FCM_mean_prop_12k$Model == "SoFn") |
+                                           (FCM_mean_prop_12k$ID == "Mix2" & FCM_mean_prop_12k$Model == "SoFnPg") |
+                                           (FCM_mean_prop_12k$ID == "Mix3" & FCM_mean_prop_12k$Model == "SoFnPgVp") |
+                                           (FCM_mean_prop_12k$ID == "Mix8" & FCM_mean_prop_12k$Model == "SoFn") |
+                                           (FCM_mean_prop_12k$ID == "Mix9" & FCM_mean_prop_12k$Model == "SoFn") |
+                                           FCM_mean_prop_12k$ID == "Mix4" | FCM_mean_prop_12k$ID == "Mix5" | FCM_mean_prop_12k$ID == "Mix6" | FCM_mean_prop_12k$ID == "Mix7", ]
+FCM_mean_prop_12k_2 <- FCM_mean_prop_12k_2[, c(1:3, 5:16)]
+FCM_mean_prop_12k_2$Technique <- "FCM"
+
+theoretical_mocks_prop2 <- theoretical_mocks_prop[, c(1:14, 16:17)]
+
+mocks_12k <- rbind(FCM_mean_prop_12k_2, theoretical_mocks_prop2)
+row.names(mocks_12k) <- NULL
+
 
 # 4. Calculate performance mocks compared to theoretical ----
 
@@ -204,7 +225,7 @@ all_data2_copycorrected <- dplyr::bind_rows(all_data2_copycorrected, illumina_pr
 theoretical_longer <- tidyr::pivot_longer(theoretical_mocks_prop[, c(1:14, 16)], cols = -ID, names_to = "Species", values_to = "Actual")
 
 # FCM
-RMSE_FCM <- readRDS(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RDS_objects/RSME_FCM_50k.rds")
+RMSE_FCM <- readRDS(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RDS_objects/RMSE_FCM_50k.rds")
 
 # qPCR
 qPCR_longer <- tidyr::pivot_longer(qPCR_mocks_means_prop[, c(1:5)], cols = -ID, names_to = "Species", values_to = "qPCR")
@@ -239,8 +260,12 @@ for (i in seq_along(IDs_illumina)) {
 }
 
 
+RMSE <- merge(RMSE_FCM, RMSE_qPCR, by = "ID", all = TRUE)
+RMSE <- merge(RMSE, RMSE_illumina, by = "ID", all = TRUE)
+
 # 5. Visualization ----
 
+## 5.1. Relative abundance ----
 all_data_melted <- reshape2::melt(all_data, id.vars = c("ID", "Type", "Technique"), variable.name = c("Strain"), value.name = c("Relative_abundance"))
 all_data2_melted <- reshape2::melt(all_data2, id.vars = c("ID", "Type", "Technique"), variable.name = c("Strain"), value.name = c("Relative_abundance"))
 all_data2_copycorrected_melted <- reshape2::melt(all_data2_copycorrected, id.vars = c("ID", "Type", "Technique"), variable.name = c("Strain"), value.name = c("Relative_abundance"))
@@ -297,3 +322,76 @@ plot_relative_all2_copycorrected_sample <- ggplot(data = all_data2_copycorrected
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5))
 print(plot_relative_all2_copycorrected_sample)
 
+
+all_data2_mocks <- subset(all_data2_copycorrected_melted, Type == "Mock")
+all_data2_mocks$ID <- gsub("Mix1", "Mock 1", all_data2_mocks$ID)
+all_data2_mocks$ID <- gsub("Mix2", "Mock 2", all_data2_mocks$ID)
+all_data2_mocks$ID <- gsub("Mix3", "Mock 3", all_data2_mocks$ID)
+all_data2_mocks$ID <- gsub("Mix8", "Mock 8", all_data2_mocks$ID)
+all_data2_mocks$ID <- gsub("Mix9", "Mock 9", all_data2_mocks$ID)
+all_data2_mocks$Technique <- gsub("Theoretical", "Actual", all_data2_mocks$Technique)
+
+plot_mocks <- ggplot(data = all_data2_mocks, aes(x = Technique, y = Relative_abundance, fill = Strain)) +
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  facet_wrap(~ ID, nrow = length(unique(ID))) +
+  theme_bw() +
+  labs(x = "Sample", y = "Relative abundance (%)") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5),
+        legend.position = "bottom",
+        axis.text = element_text(size = 12),
+        axis.title.y = element_text(size = 16),
+        axis.title.x = element_blank(),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 16),
+        strip.text = element_text(size = 14),
+        legend.text.align = 0) +
+  scale_fill_manual(values = c("Fn" = "#F8766D", "Pg" = "#A3A500", "So" = "#00BF7D", "Vp" = "#00B0F6", "Other" = "#E76BF3"),
+                    labels = c("Fn" = expression(italic("F. nucleatum")), "Pg" = expression(italic("P. gingivalis")), "So" = expression(italic("S. oralis")), "Vp" = expression(italic("V. parvula")), "Other" = "Other")) +
+  scale_x_discrete(labels = c("Actual" = "Actual", "FCM_Model_SoFn" = "FCM SoFn", "FCM_Model_SoFnPg" = "FCM SoFnPg", "FCM_Model_SoFnPgVp" = "FCM SoFnPgVp", "Illumina" = "Illumina", "qPCR" = "qPCR"))
+print(plot_mocks)
+
+mocks_12k_melted <- reshape2::melt(mocks_12k, id.vars = c("ID", "Technique"), variable.name = c("Strain"), value.name = c("Relative_abundance"))
+mocks_12k_melted$ID <- gsub("Mix1", "Mock 1", mocks_12k_melted$ID)
+mocks_12k_melted$ID <- gsub("Mix2", "Mock 2", mocks_12k_melted$ID)
+mocks_12k_melted$ID <- gsub("Mix3", "Mock 3", mocks_12k_melted$ID)
+mocks_12k_melted$ID <- gsub("Mix4", "Mock 4", mocks_12k_melted$ID)
+mocks_12k_melted$ID <- gsub("Mix5", "Mock 5", mocks_12k_melted$ID)
+mocks_12k_melted$ID <- gsub("Mix6", "Mock 6", mocks_12k_melted$ID)
+mocks_12k_melted$ID <- gsub("Mix7", "Mock 7", mocks_12k_melted$ID)
+mocks_12k_melted$ID <- gsub("Mix8", "Mock 8", mocks_12k_melted$ID)
+mocks_12k_melted$ID <- gsub("Mix9", "Mock 9", mocks_12k_melted$ID)
+mocks_12k_melted$Technique <- gsub("Theoretical", "Actual", mocks_12k_melted$Technique)
+
+plot_mocks_12k <- ggplot(data = mocks_12k_melted, aes(x = Technique, y = Relative_abundance, fill = Strain)) +
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  facet_wrap(~ ID, nrow = length(unique(ID))) +
+  theme_bw() +
+  labs(x = "Sample", y = "Relative abundance (%)") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5),
+        legend.position = "bottom",
+        axis.text = element_text(size = 12),
+        axis.title.y = element_text(size = 16),
+        axis.title.x = element_blank(),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 16),
+        strip.text = element_text(size = 14),
+        legend.text.align = 0) +
+  scale_fill_manual(values = c("Fn" = "#F8766D", "Pg" = "#E38900", "So" = "#C49A00", "Vp" = "#99A800", "An" = "#53B400", "Av" = "#00BC56", "Aa" = "#00C094", "Sg" = "#00BFC4", "Smi" = "#00B6EB", "Smu" = "#06A4FF", "Pi" = "#A58AFF", "Ssal" = "#DF70F8", "Ssan" = "#FB61D7", "Ssob" = "#FF66A8"),
+                    labels = c("Fn" = expression(italic("F. nucleatum")), "Pg" = expression(italic("P. gingivalis")), "So" = expression(italic("S. oralis")), "Vp" = expression(italic("V. parvula")), "An" = expression(italic("A. naeslundii")), "Av" = expression(italic("A. viscosus")), "Aa" = expression(italic("A. actinomycetemcomitans")), "Sg" = expression(italic("S. gordonii")), "Smi" = expression(italic("S. mitis")), "Smu" = expression(italic("S. mutans")), "Pi" = expression(italic("P. intermedia")), "Ssal" = expression(italic("S. salivarius")), "Ssan" = expression(italic("S. sanguinis")), "Ssob" = expression(italic("S. sobrinus")))) +
+  scale_x_discrete(labels = c("Actual" = "Actual", "FCM" = "FCM"))
+print(plot_mocks_12k)
+
+
+## 5.2. RMSE ----
+RMSE_melted <- reshape2::melt(RMSE, id.vars = c("ID"), variable.name = c("Technique"), value.name = c("RMSE"))
+
+plot_RMSE <- ggplot(data = RMSE_melted, aes(x = ID, y = RMSE, color = Technique)) +
+  geom_point(size = 5, alpha = 0.6) +
+  labs(x = "Mock", y = "RMSE", color = "Technique") +
+  scale_color_manual(values = c("RMSE_SoFn"= "#FF6C00", "RMSE_SoFnPg"= "darkred", "RMSE_SoFnPgVp" = "red3", "RMSE_qPCR" = "blue3", "RMSE_illumina" = "#008080"),
+                     labels = c("RMSE_SoFn"= "FCM SoFn", "RMSE_SoFnPg"= "FCM SoFnPg", "RMSE_SoFnPgVp" = "FCM SoFnPgVp", "RMSE_qPCR" = "qPCR", "RMSE_illumina" = "Illumina")) +
+  paper_theme_fab +
+  theme(legend.position = "right",
+        axis.title.x = element_blank()) +
+  scale_x_discrete(labels = c("Mix1" = "Mock 1", "Mix2" = "Mock 2", "Mix3" = "Mock 3", "Mix8" = "Mock 8", "Mix9" = "Mock 9"))
+print(plot_RMSE)
