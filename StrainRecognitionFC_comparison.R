@@ -350,6 +350,42 @@ plot_mocks <- ggplot(data = all_data2_mocks, aes(x = Technique, y = Relative_abu
   scale_x_discrete(labels = c("Actual" = "Actual", "FCM_Model_SoFn" = "FCM SoFn", "FCM_Model_SoFnPg" = "FCM SoFnPg", "FCM_Model_SoFnPgVp" = "FCM SoFnPgVp", "Illumina" = "Illumina", "qPCR" = "qPCR"))
 print(plot_mocks)
 
+all_data2_cocult <- subset(all_data2_copycorrected_melted, Type == "Co-culture")
+all_data2_cocult$ID <- as.factor(all_data2_cocult$ID)
+order_IDs <- c("Co1_A_24h", "Co1_B_24h", "Co1_C_24h",
+               "Co1_A_48h", "Co1_B_48h", "Co1_C_48h",
+               "Co2_A_24h", "Co2_B_24h", "Co2_C_24h",
+               "Co2_A_48h", "Co2_B_48h", "Co2_C_48h",
+               "Co3_A_24h", "Co3_B_24h", "Co3_C_24h",
+               "Co3_A_48h", "Co3_B_48h", "Co3_C_48h")
+all_data2_cocult$ID <- factor(all_data2_cocult$ID, levels = order_IDs)
+
+plot_cocult <- ggplot(data = all_data2_cocult, aes(x = Technique, y = Relative_abundance, fill = Strain)) +
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  facet_wrap(~ ID, ncol = 3,
+             labeller = labeller(ID = c(Co1_A_24h = "Co-culture 1A 24h", Co1_B_24h = "Co-culture 1B 24h", Co1_C_24h = "Co-culture 1C 24h",
+                                        Co1_A_48h = "Co-culture 1A 48h", Co1_B_48h = "Co-culture 1B 48h", Co1_C_48h = "Co-culture 1C 48h",
+                                        Co2_A_24h = "Co-culture 2A 24h", Co2_B_24h = "Co-culture 2B 24h", Co2_C_24h = "Co-culture 2C 24h",
+                                        Co2_A_48h = "Co-culture 2A 48h", Co2_B_48h = "Co-culture 2B 48h", Co2_C_48h = "Co-culture 2C 48h",
+                                        Co3_A_24h = "Co-culture 3A 24h", Co3_B_24h = "Co-culture 3B 24h", Co3_C_24h = "Co-culture 3C 24h",
+                                        Co3_A_48h = "Co-culture 3A 48h", Co3_B_48h = "Co-culture 3B 48h", Co3_C_48h = "Co-culture 3C 48h"))) +
+  theme_bw() +
+  labs(x = "Sample", y = "Relative abundance (%)") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5),
+        legend.position = "bottom",
+        axis.text = element_text(size = 12),
+        axis.title.y = element_text(size = 16),
+        axis.title.x = element_blank(),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 16),
+        strip.text = element_text(size = 14),
+        legend.text.align = 0) +
+  scale_fill_manual(values = c("Fn" = "#F8766D", "Pg" = "#A3A500", "So" = "#00BF7D", "Vp" = "#00B0F6", "Other" = "#E76BF3"),
+                    labels = c("Fn" = expression(italic("F. nucleatum")), "Pg" = expression(italic("P. gingivalis")), "So" = expression(italic("S. oralis")), "Vp" = expression(italic("V. parvula")), "Other" = "Other")) +
+  scale_x_discrete(labels = c("FCM_Model_SoFn" = "FCM SoFn", "FCM_Model_SoFnPg" = "FCM SoFnPg", "FCM_Model_SoFnPgVp" = "FCM SoFnPgVp", "Illumina" = "Illumina", "qPCR" = "qPCR"))
+print(plot_cocult)
+
+
 mocks_12k_melted <- reshape2::melt(mocks_12k, id.vars = c("ID", "Technique"), variable.name = c("Strain"), value.name = c("Relative_abundance"))
 mocks_12k_melted$ID <- gsub("Mix1", "Mock 1", mocks_12k_melted$ID)
 mocks_12k_melted$ID <- gsub("Mix2", "Mock 2", mocks_12k_melted$ID)
