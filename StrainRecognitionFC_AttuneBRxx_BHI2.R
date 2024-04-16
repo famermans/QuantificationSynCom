@@ -1749,6 +1749,8 @@ FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp_mean_prop[, -c(1)] <- sweep(as.matrix(F
 #                                   FCM_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp_mean_prop)
 # FCM_mean_prop[is.na(FCM_mean_prop)] <- 0
 
+#saveRDS(object = FCM_mean_prop, file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RDS_objects/FCM_mean_prop_12328cells.rds")
+
 # Calculation RSME
 FCM_SoFn_longer <- tidyr::pivot_longer(FCM_SoFn_mean_prop, cols = -ID, names_to = "Species", values_to = "Predicted")
 merged_SoFn <- merge(FCM_SoFn_longer, theoretical_longer, by = c("ID", "Species"))
