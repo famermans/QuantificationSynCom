@@ -46,6 +46,8 @@ qPCR_cocult <- qPCR_cocult[!(qPCR_cocult$Sample %in% c("Co4", "Co5", "Co6")), c(
 qPCR_cocult[is.na(qPCR_cocult)] <- 0
 rownames(qPCR_cocult) <- NULL
 
+qPCR_cocult$ID <- paste(qPCR_cocult$Sample, qPCR_cocult$Replicate, qPCR_cocult$Timepoint, sep = "_")
+
 
 # 3. Calculations qPCR ----
 
@@ -72,7 +74,7 @@ mocks_qPCR <- data.frame(Sample_Name = qPCR_mocks$Sample,
                          Cells_Vp = qPCR_mocks$Vp/CopyNumber_Vp,
                          CellsSD_Vp = qPCR_mocks$SD_Vp/CopyNumber_Vp)
 
-cocult_qPCR <- data.frame(Sample_Name = qPCR_cocult$Sample,
+cocult_qPCR <- data.frame(Sample_Name = qPCR_cocult$ID,
                           Cells_So = qPCR_cocult$So/CopyNumber_So,
                           CellsSD_So = qPCR_cocult$SD_So/CopyNumber_So,
                           Cells_Fn = qPCR_cocult$Fn/CopyNumber_Fn,
