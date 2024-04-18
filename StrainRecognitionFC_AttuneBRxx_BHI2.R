@@ -308,6 +308,120 @@ singlets <- flowCore::filter(flowData_transformed_BHI_gated, polyGateSinglets)
 SingletCount <- summary(singlets)
 SingletCount <- toTable(SingletCount)
 
+singlets_full <- cbind(SingletCount, metadata_BHI)
+vol <- as.numeric(flowCore::fsApply(flowData_transformed_BHI_gated, FUN = function(x) x@description$`$VOL`))/1000
+singlets_full <- cbind(singlets_full, vol)
+names(singlets_full)[names(singlets_full) == "count"] <- "events"
+names(singlets_full)[names(singlets_full) == "true"] <- "singlets"
+names(singlets_full)[names(singlets_full) == "false"] <- "multiplets"
+
+singlets_full <- singlets_full[, c(3:6, 13:16, 18, 19)]
+singlets_full$concentration <- ((singlets_full$singlets*singlets_full$Dilution)/singlets_full$vol)*1000
+
+singlets_mean <- aggregate(concentration ~ Strain + Replicate + Timepoint, data = singlets_full, FUN = mean)
+names(singlets_mean)[names(singlets_mean) == "concentration"] <- "concentration_singlets"
+singlets_percent_mean <- aggregate(percent ~ Strain + Replicate + Timepoint, data = singlets_full, FUN = mean)
+singlets_mean$percent <- singlets_percent_mean$percent
+
+# Run 6. before running this part!
+singlets_mean$concentration_total <- cell_concentrations_mean$Concentration
+
+singlets_subset <- subset(singlets_mean, Strain == "So" | Strain == "Fn" | Strain == "Pg" | Strain == "Vp" | Strain == "Mix1" | Strain == "Mix2" | Strain == "Mix3" | Strain == "Mix8" | Strain == "Mix9" | Strain == "Co1" | Strain == "Co2" | Strain == "Co3")
+singlets_subset2 <- singlets_subset
+singlets_subset2$Merge <- paste(singlets_subset2$Strain, singlets_subset2$Replicate, sep = "_")
+singlets_theoretical_mocks <- merge(volumes_mocks, singlets_subset2, by = "Merge")
+singlets_theoretical_mocks <- singlets_theoretical_mocks[, c(2:6, 10:12)]
+colnames(singlets_theoretical_mocks)[colnames(singlets_theoretical_mocks) == "Strain.x"] <- "Strain"
+colnames(singlets_theoretical_mocks)[colnames(singlets_theoretical_mocks) == "Replicate.x"] <- "Replicate"
+colnames(singlets_theoretical_mocks)[colnames(singlets_theoretical_mocks) == "concentration_singlets"] <- "concentration_axenic_singlets"
+colnames(singlets_theoretical_mocks)[colnames(singlets_theoretical_mocks) == "concentration_total"] <- "concentration_axenic_total"
+
+singlets_theoretical_mocks$counts_axenic_singlets <- singlets_theoretical_mocks$Volume*singlets_theoretical_mocks$concentration_axenic_singlets
+singlets_theoretical_mocks$concentration_mock_singlets <- singlets_theoretical_mocks$counts_axenic_singlets/singlets_theoretical_mocks$Total_volume
+singlets_theoretical_mocks$counts_axenic_total <- singlets_theoretical_mocks$Volume*singlets_theoretical_mocks$concentration_axenic_total
+singlets_theoretical_mocks$concentration_mock_total <- singlets_theoretical_mocks$counts_axenic_total/singlets_theoretical_mocks$Total_volume
+singlets_theoretical_mocks <- subset(singlets_theoretical_mocks, Mix_ID == "Mix1" | Mix_ID == "Mix2" | Mix_ID == "Mix3" | Mix_ID == "Mix8" | Mix_ID == "Mix9")
+row.names(singlets_theoretical_mocks) <- NULL
+
+singlets_theoretical_mocks <- singlets_theoretical_mocks[, c(1, 2, 10, 12)]
+saveRDS(object = singlets_theoretical_mocks, file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RDS_objects/singlets_theoretical_mocks.rds")
+
+singlets_theoretical_mocks_sumsinglets <- aggregate(concentration_mock_singlets ~ Mix_ID, data = singlets_theoretical_mocks, FUN = sum)
+singlets_theoretical_mocks_sumtotal <- aggregate(concentration_mock_total ~ Mix_ID, data = singlets_theoretical_mocks, FUN = sum)
+singlets_mocks <- merge(singlets_theoretical_mocks_sumsinglets, singlets_theoretical_mocks_sumtotal, by = "Mix_ID")
+singlets_mocks$percentage_theoretical <- (singlets_mocks$concentration_mock_singlets/singlets_mocks$concentration_mock_total)*100
+colnames(singlets_mocks)[colnames(singlets_mocks) == "concentration_mock_singlets"] <- "concentration_singlets_theoretical"
+colnames(singlets_mocks)[colnames(singlets_mocks) == "concentration_mock_total"] <- "concentration_total_theoretical"
+
+singlets_mean_mocks <- subset(singlets_mean, Strain == "Mix1" | Strain == "Mix2" | Strain == "Mix3" | Strain == "Mix8" | Strain == "Mix9")
+colnames(singlets_mean_mocks)[colnames(singlets_mean_mocks) == "Strain"] <- "Mix_ID"
+colnames(singlets_mean_mocks)[colnames(singlets_mean_mocks) == "concentration_singlets"] <- "concentration_singlets_measured"
+colnames(singlets_mean_mocks)[colnames(singlets_mean_mocks) == "concentration_total"] <- "concentration_total_measured"
+colnames(singlets_mean_mocks)[colnames(singlets_mean_mocks) == "percent"] <- "percentage_measured"
+singlets_mean_mocks <- singlets_mean_mocks[, c(1, 4:6)]
+row.names(singlets_mean_mocks) <- NULL
+
+singlets_mocks <- merge(singlets_mocks, singlets_mean_mocks, by = "Mix_ID")
+singlets_melted <- reshape2::melt(singlets_mocks, id.vars = c("Mix_ID"))
+singlets_melted$type <- c(rep(c("Theoretical"), 15), rep(c("Measured"), 15))
+singlets_melted$type2 <- c(rep(c("Concentration"), 10), rep(c("Percentage"), 5), rep(c("Concentration"), 5), rep(c("Percentage"), 5), rep(c("Concentration"), 5))
+singlets_melted$Mix_ID <- gsub("Mix1", "Mock 1", singlets_melted$Mix_ID)
+singlets_melted$Mix_ID <- gsub("Mix2", "Mock 2", singlets_melted$Mix_ID)
+singlets_melted$Mix_ID <- gsub("Mix3", "Mock 3", singlets_melted$Mix_ID)
+singlets_melted$Mix_ID <- gsub("Mix8", "Mock 8", singlets_melted$Mix_ID)
+singlets_melted$Mix_ID <- gsub("Mix9", "Mock 9", singlets_melted$Mix_ID)
+singlets_melted_concentration <- subset(singlets_melted, type2 == "Concentration")
+singlets_melted_concentration$population <- c(rep(c(rep(c("Singlets"), 5), rep(c("Total"), 5)), 2))
+singlets_melted_percentage <- subset(singlets_melted, type2 == "Percentage")
+
+p_singlets_mocks_concentration <- ggplot(data = singlets_melted_concentration, aes(x = Mix_ID, y = value, color = population, shape = type)) +
+  geom_point(size = 7, alpha = 0.6) +
+  labs(y = "Concentration (cells/mL)", x = NULL, color = NULL, shape = NULL) +
+  paper_theme_fab +
+  scale_color_manual(values = c("Singlets" = "darkred", "Total" = "blue3"),
+                     labels = c("Singlets" = "Singlets", "Total"= "All")) +
+  scale_shape_manual(values = c("Measured" = 16, "Theoretical" = 17),
+                     labels = c("Measured" = "Measured", "Theoretical" = "Calculated"))
+print(p_singlets_mocks_concentration)
+
+p_singlets_mocks_percentage <- ggplot(data = singlets_melted_percentage, aes(x = Mix_ID, y = value, color = type)) +
+  geom_point(size = 7, alpha = 0.6) +
+  labs(y = "Relative abundance (%)", x = NULL, color = NULL) +
+  paper_theme_fab +
+  scale_y_continuous(limits = c(50, 80)) +
+  scale_color_manual(values = c("Measured" = "darkred", "Theoretical" = "blue3"),
+                     labels = c("Measured" = "Measured", "Theoretical" = "Calculated"))
+print(p_singlets_mocks_percentage)
+
+singlets_cocult <- subset(singlets_mean, Strain == "Co1" | Strain == "Co2" | Strain == "Co3")
+singlets_cocult_mean <- aggregate(concentration_singlets ~ Strain + Replicate + Timepoint, data = singlets_cocult, FUN = mean)
+singlets_cocult_mean2 <- aggregate(concentration_total ~ Strain + Replicate + Timepoint, data = singlets_cocult, FUN = mean)
+singlets_cocult_mean$concentration_total <- singlets_cocult_mean2$concentration_total
+rm(singlets_cocult_mean2)
+singlets_cocult_mean$percentage <- (singlets_cocult_mean$concentration_singlets/singlets_cocult_mean$concentration_total)*100
+singlets_cocult_mean$ID <- paste(singlets_cocult_mean$Strain, singlets_cocult_mean$Replicate, sep = "_")
+singlets_cocult_mean$ID <- gsub("Co1_", "Co-culture 1 ", singlets_cocult_mean$ID)
+singlets_cocult_mean$ID <- gsub("Co2_", "Co-culture 2 ", singlets_cocult_mean$ID)
+singlets_cocult_mean$ID <- gsub("Co3_", "Co-culture 3 ", singlets_cocult_mean$ID)
+singlets_cocult_mean$ID <- as.factor(singlets_cocult_mean$ID)
+
+p_singlets_cocult_percentage <- ggplot(data = singlets_cocult_mean, aes(x = Timepoint, y = percentage)) +
+  geom_point(size = 7) +
+  labs(y = "Relative abundance (%)", x = NULL) +
+  facet_wrap(~ ID, ncol = 3) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5),
+        legend.position = "bottom",
+        axis.text = element_text(size = 12),
+        axis.title.y = element_text(size = 16),
+        axis.title.x = element_blank(),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 16),
+        strip.text = element_text(size = 14),
+        legend.text.align = 0,
+        panel.grid = element_blank()) +
+  scale_y_continuous(limits = c(30, 90), breaks = seq(30, 90, by = 10))
+print(p_singlets_cocult_percentage)
 
 # 6. Cell concentrations ----
 ## 6.1. Calculate concentrations ----
@@ -1490,8 +1604,8 @@ accuracy_RF2 <- dplyr::bind_rows(accuracy_RF, random_guessing)
 accuracy_RF2 <- accuracy_RF2[, c(2:4)]
 
 plot_accuracy_RF <- ggplot(data = accuracy_RF2, aes(x = NumberStrains, y = Accuracy, color = Method))+
-  geom_point(data = subset(accuracy_RF2, Method == "RandomForest"), size = 5) +
-  geom_line(data = subset(accuracy_RF2, Method == "RandomGuessing")) +
+  geom_point(data = subset(accuracy_RF2, Method == "RandomForest"), size = 7) +
+  geom_line(data = subset(accuracy_RF2, Method == "RandomGuessing"), size = 2) +
   labs(x = "Number of strains", y = "Accuracy (%)", color = NULL) +
   scale_color_manual(values = c("RandomForest"= "black", "RandomGuessing"= "darkred"),
                      labels = c("RandomForest"= "Random Forest", "RandomGuessing" = "Random Guessing")) +
