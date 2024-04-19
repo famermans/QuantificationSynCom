@@ -404,6 +404,9 @@ singlets_cocult_mean$ID <- gsub("Co1_", "Co-culture 1 ", singlets_cocult_mean$ID
 singlets_cocult_mean$ID <- gsub("Co2_", "Co-culture 2 ", singlets_cocult_mean$ID)
 singlets_cocult_mean$ID <- gsub("Co3_", "Co-culture 3 ", singlets_cocult_mean$ID)
 singlets_cocult_mean$ID <- as.factor(singlets_cocult_mean$ID)
+singlets_cocult_mean$Strain <- gsub("Co1", "Co-culture 1", singlets_cocult_mean$Strain)
+singlets_cocult_mean$Strain <- gsub("Co2", "Co-culture 2", singlets_cocult_mean$Strain)
+singlets_cocult_mean$Strain <- gsub("Co3", "Co-culture 3", singlets_cocult_mean$Strain)
 
 p_singlets_cocult_percentage <- ggplot(data = singlets_cocult_mean, aes(x = Timepoint, y = percentage)) +
   geom_point(size = 7) +
@@ -422,6 +425,27 @@ p_singlets_cocult_percentage <- ggplot(data = singlets_cocult_mean, aes(x = Time
         panel.grid = element_blank()) +
   scale_y_continuous(limits = c(30, 90), breaks = seq(30, 90, by = 10))
 print(p_singlets_cocult_percentage)
+
+p_singlets_cocult_percentage2 <- ggplot(data = singlets_cocult_mean, aes(x = Timepoint, y = percentage, color = Replicate, group = Replicate)) +
+  geom_point(size = 7) +
+  geom_line(linewidth = 2) +
+  labs(y = "Relative abundance (%)", x = NULL) +
+  facet_wrap(~ Strain, ncol = 3) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5),
+        legend.position = "bottom",
+        axis.text = element_text(size = 12),
+        axis.title.y = element_text(size = 16),
+        axis.title.x = element_blank(),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 16),
+        strip.text = element_text(size = 14),
+        legend.text.align = 0,
+        panel.grid = element_blank()) +
+  scale_y_continuous(limits = c(30, 90), breaks = seq(30, 90, by = 10)) +
+  scale_color_manual(values = c("A" = "darkred", "B" = "blue3", "C" = "#A3A500"))
+print(p_singlets_cocult_percentage2)
+
 
 # 6. Cell concentrations ----
 ## 6.1. Calculate concentrations ----
@@ -1605,7 +1629,7 @@ accuracy_RF2 <- accuracy_RF2[, c(2:4)]
 
 plot_accuracy_RF <- ggplot(data = accuracy_RF2, aes(x = NumberStrains, y = Accuracy, color = Method))+
   geom_point(data = subset(accuracy_RF2, Method == "RandomForest"), size = 7) +
-  geom_line(data = subset(accuracy_RF2, Method == "RandomGuessing"), size = 2) +
+  geom_line(data = subset(accuracy_RF2, Method == "RandomGuessing"), linewidth = 2) +
   labs(x = "Number of strains", y = "Accuracy (%)", color = NULL) +
   scale_color_manual(values = c("RandomForest"= "black", "RandomGuessing"= "darkred"),
                      labels = c("RandomForest"= "Random Forest", "RandomGuessing" = "Random Guessing")) +
