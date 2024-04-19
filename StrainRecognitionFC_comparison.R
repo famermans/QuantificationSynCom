@@ -587,6 +587,35 @@ plot_cocult_absolute_FCM <- ggplot(data = absolute_cocult_FCM, aes(x = Timepoint
   scale_y_continuous(breaks = seq(0, 500000000, by = 100000000))
 print(plot_cocult_absolute_FCM)
 
+# qPCR for Pg --> might there be some necrotrophy happening?
+qPCR_cocult_Pg <- qPCR_cocult_means[, c(1, 4)]
+qPCR_cocult_Pg <- dplyr::filter(qPCR_cocult_Pg, Pg > 0)
+qPCR_cocult_Pg$Cocult <- as.factor(substr(as.character(qPCR_cocult_Pg$ID), start = 1, stop = 3))
+qPCR_cocult_Pg$Replicate <- as.factor(substr(as.character(qPCR_cocult_Pg$ID), start = 5, stop = 5))
+qPCR_cocult_Pg$Timepoint <- as.factor(substr(as.character(qPCR_cocult_Pg$ID), start = nchar(as.character(qPCR_cocult_Pg$ID))-2, stop = nchar(as.character(qPCR_cocult_Pg$ID))))
+qPCR_cocult_Pg$Cocult <- gsub("Co2", "Co-culture 2", qPCR_cocult_Pg$Cocult)
+qPCR_cocult_Pg$Cocult <- gsub("Co3", "Co-culture 3", qPCR_cocult_Pg$Cocult)
+
+plot_cocult_absolute_Pg <- ggplot(data = qPCR_cocult_Pg, aes(x = Timepoint, y = Pg, color = Replicate, group = Replicate)) +
+  geom_point(size = 7, alpha = 0.6) +
+  geom_line(linewidth = 2, alpha = 0.6) +
+  labs(y = "Concentration (cells/mL)", x = NULL) +
+  facet_wrap(~ Cocult, ncol = 2) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5),
+        legend.position = "bottom",
+        axis.text = element_text(size = 12),
+        axis.title.y = element_text(size = 16),
+        axis.title.x = element_blank(),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 16),
+        strip.text = element_text(size = 14),
+        legend.text.align = 0,
+        panel.grid = element_blank()) +
+  scale_y_continuous(limits = c(0, 5000000), breaks = c(0, 500000, 1000000, 2000000, 3000000, 4000000, 5000000)) +
+  scale_color_manual(values = c("A" = "darkred", "B" = "blue3", "C" = "#A3A500"))
+print(plot_cocult_absolute_Pg)
+
 
 ## 5.3. RMSE relative abundance ----
 RMSE_melted <- reshape2::melt(RMSE, id.vars = c("ID"), variable.name = c("Technique"), value.name = c("RMSE"))
