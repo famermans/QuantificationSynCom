@@ -1638,6 +1638,28 @@ plot_accuracy_RF <- ggplot(data = accuracy_RF2, aes(x = NumberStrains, y = Accur
   scale_x_continuous(limits = c(0, 14), breaks = seq(0, 14, by = 1))
 print(plot_accuracy_RF)
 
+# Relative difference between actual accuracy and random guessing
+accuracy_rel <- reshape2::dcast(accuracy_RF2, NumberStrains ~ Method, value.var = "Accuracy")
+accuracy_rel <- accuracy_rel[rowSums(is.na(accuracy_rel)) == 0, ]
+accuracy_rel$deltaAcc <- accuracy_rel$RandomForest-accuracy_rel$RandomGuessing
+accuracy_rel$increaseACC <- (accuracy_rel$deltaAcc/accuracy_rel$RandomGuessing)*100
+
+plot_accuracy_RF_rel <- ggplot(data = accuracy_rel, aes(x = NumberStrains, y = increaseACC))+
+  geom_point(size = 7) +
+  labs(x = "Number of strains", y = "Increase accuracy to random guessing (%)", color = NULL) +
+  paper_theme_fab +
+  scale_y_continuous(limits = c(0, 650), breaks = seq(0, 600, by = 100)) +
+  scale_x_continuous(limits = c(0, 14), breaks = seq(0, 14, by = 1))
+print(plot_accuracy_RF_rel)
+
+plot_accuracy_RF_delta <- ggplot(data = accuracy_rel, aes(x = NumberStrains, y = deltaAcc))+
+  geom_point(size = 7) +
+  labs(x = "Number of strains", y = "Δ accuracy (%)", color = NULL) +
+  paper_theme_fab +
+  scale_y_continuous(limits = c(30, 60), breaks = seq(20, 60, by = 10)) +
+  scale_x_continuous(limits = c(0, 14), breaks = seq(0, 14, by = 1))
+print(plot_accuracy_RF_delta)
+
 
 ### 8.3.2. Performance of predictions ----
 # RMSE (root mean squared error) for predictions
@@ -1991,6 +2013,612 @@ RMSE <- merge(RMSE, RMSE_AaAnAvFnPgPiSgSmiSmuSoSsalSsanSsobVp, by = "ID", all = 
 #saveRDS(object = RMSE, file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RDS_objects/RMSE_FCM.rds")
 
 
+## 8.4. In silico mocks ----
+### 8.4.1. Create in silico mocks ----
+# Extract sample names for relevant axenic cultures
+axenic_cultures <- volumes_mocks$Merge
+metadata_axenic <- cell_concentrations[, c("Sample_name", "Strain", "Replicate")]
+metadata_axenic$ID <- paste(metadata_axenic$Strain, metadata_axenic$Replicate, sep = "_")
+metadata_axenic <- metadata_axenic[metadata_axenic$ID %in% axenic_cultures, ]
+
+# Pool duplicate measurements
+to_pool_axenic <- sub("_1000.*", "", metadata_axenic$Sample_name)
+to_pool_axenic <- unique(to_pool_axenic)
+flowData_pooled_axenic <- FCS_pool(x = flowData_transformed_BHI_gated,
+                                   stub = to_pool_axenic)
+
+metadata_pooled_axenic <- data.frame(do.call(rbind, lapply(strsplit(flowCore::sampleNames(flowData_pooled_axenic), "_"), rbind)))
+colnames(metadata_pooled_axenic) <- c("Date", "Experimenter", "ExperimentID", "Medium", "Timepoint", "Strain", "Replicate")
+
+# Resample to theoretical count in order to pool different strains for each mock
+total_count_mocks <- data.frame(ID = metadata_BHI$Strain,
+                                Count = TotalCount$true)
+total_count_mocks <- total_count_mocks[total_count_mocks$ID == "Mix1" |
+                                         total_count_mocks$ID == "Mix2" |
+                                         total_count_mocks$ID == "Mix3" |
+                                         total_count_mocks$ID == "Mix4" |
+                                         total_count_mocks$ID == "Mix5" |
+                                         total_count_mocks$ID == "Mix6" |
+                                         total_count_mocks$ID == "Mix7" |
+                                         total_count_mocks$ID == "Mix8" |
+                                         total_count_mocks$ID == "Mix9", ]
+total_counts_mocks_mean <- aggregate(Count ~ ID, data = total_count_mocks, FUN = mean)
+total_counts_mocks_mean[, -c(1)] <- round(total_counts_mocks_mean[, -c(1)])
+row.names(total_counts_mocks_mean) <- total_counts_mocks_mean$ID
+
+theoretical_mocks_counts <- theoretical_mocks_prop
+row.names(theoretical_mocks_counts) <- theoretical_mocks_counts$ID
+# Calculate number of events to subsample so in silico mocks have same total count as in vitro mocks 
+theoretical_mocks_counts["Mix1", -c(1)] <- theoretical_mocks_counts["Mix1", -c(1)]*total_counts_mocks_mean["Mix1", c(2)]
+theoretical_mocks_counts["Mix2", -c(1)] <- theoretical_mocks_counts["Mix2", -c(1)]*total_counts_mocks_mean["Mix2", c(2)]
+theoretical_mocks_counts["Mix3", -c(1)] <- theoretical_mocks_counts["Mix3", -c(1)]*total_counts_mocks_mean["Mix3", c(2)]
+theoretical_mocks_counts["Mix4", -c(1)] <- theoretical_mocks_counts["Mix4", -c(1)]*total_counts_mocks_mean["Mix4", c(2)]
+theoretical_mocks_counts["Mix5", -c(1)] <- theoretical_mocks_counts["Mix5", -c(1)]*total_counts_mocks_mean["Mix5", c(2)]
+theoretical_mocks_counts["Mix6", -c(1)] <- theoretical_mocks_counts["Mix6", -c(1)]*total_counts_mocks_mean["Mix6", c(2)]
+theoretical_mocks_counts["Mix7", -c(1)] <- theoretical_mocks_counts["Mix7", -c(1)]*total_counts_mocks_mean["Mix7", c(2)]
+theoretical_mocks_counts["Mix8", -c(1)] <- theoretical_mocks_counts["Mix8", -c(1)]*total_counts_mocks_mean["Mix8", c(2)]
+theoretical_mocks_counts["Mix9", -c(1)] <- theoretical_mocks_counts["Mix9", -c(1)]*total_counts_mocks_mean["Mix9", c(2)]
+
+theoretical_mocks_counts[, -c(1)] <- round(theoretical_mocks_counts[, -c(1)])
 
 
+# Mix 1
+flowData_Mix1_So <- flowData_pooled_axenic[c(12)]
+flowData_Mix1_Fn <- flowData_pooled_axenic[c(4)]
 
+for (i in 1:10) {
+  set.seed(sample(1:1000, 1))
+  resample_temp_So <- Phenoflow::FCS_resample(flowData_Mix1_So, sample = theoretical_mocks_counts["Mix1", "So"])
+  resample_temp_Fn <- Phenoflow::FCS_resample(flowData_Mix1_Fn, sample = theoretical_mocks_counts["Mix1", "Fn"])
+  merged_temp <- flowCore::rbind2(resample_temp_So, resample_temp_Fn)
+  
+  param_names <- names(merged_temp[[1]])
+  to_remove <- "<Original> Original"
+  param_indice <- which(param_names == to_remove)
+  
+  for (j in seq_along(merged_temp@frames)) {
+    flow_frame_temp <- merged_temp[[j]][, -param_indice]
+    flow_set_temp <- flowCore::flowSet(flow_frame_temp)
+    new_name_temp <- paste("Mix1", j, sep = "_")
+    sampleNames(flow_set_temp) <- new_name_temp
+    if (j == 1) {
+      flow_set_temp_concat <- flow_set_temp
+    }
+    else {
+      flow_set_temp_concat <- flowCore::rbind2(flow_set_temp_concat, flow_set_temp)
+    }
+  }
+  
+  Mix1_temp <- FCS_pool(x = flow_set_temp_concat, stub = "Mix1")
+  new_name_mix_temp <- paste("Mix1", i, sep = "_")
+  sampleNames(Mix1_temp) <- new_name_mix_temp
+  
+  if (i == 1) {
+    flowData_Mix1 <- Mix1_temp
+  }
+  else {
+    flowData_Mix1 <- flowCore::rbind2(flowData_Mix1, Mix1_temp)
+  }
+  
+  rm(resample_temp_So, resample_temp_Fn, merged_temp, param_names, to_remove, param_indice, flow_frame_temp, flow_set_temp, new_name_temp, flow_set_temp_concat, Mix1_temp, new_name_mix_temp)
+}
+
+# Mix 2
+flowData_Mix2_So <- flowData_pooled_axenic[c(12)]
+flowData_Mix2_Fn <- flowData_pooled_axenic[c(4)]
+flowData_Mix2_Pg <- flowData_pooled_axenic[c(7)]
+
+for (i in 1:10) {
+  set.seed(sample(1:1000, 1))
+  resample_temp_So <- Phenoflow::FCS_resample(flowData_Mix2_So, sample = theoretical_mocks_counts["Mix2", "So"])
+  resample_temp_Fn <- Phenoflow::FCS_resample(flowData_Mix2_Fn, sample = theoretical_mocks_counts["Mix2", "Fn"])
+  resample_temp_Pg <- Phenoflow::FCS_resample(flowData_Mix2_Pg, sample = theoretical_mocks_counts["Mix2", "Pg"])
+  merged_temp <- flowCore::rbind2(resample_temp_So, resample_temp_Fn)
+  merged_temp <- flowCore::rbind2(merged_temp, resample_temp_Pg)
+  
+  param_names <- names(merged_temp[[1]])
+  to_remove <- "<Original> Original"
+  param_indice <- which(param_names == to_remove)
+  
+  for (j in seq_along(merged_temp@frames)) {
+    flow_frame_temp <- merged_temp[[j]][, -param_indice]
+    flow_set_temp <- flowCore::flowSet(flow_frame_temp)
+    new_name_temp <- paste("Mix2", j, sep = "_")
+    sampleNames(flow_set_temp) <- new_name_temp
+    if (j == 1) {
+      flow_set_temp_concat <- flow_set_temp
+    }
+    else {
+      flow_set_temp_concat <- flowCore::rbind2(flow_set_temp_concat, flow_set_temp)
+    }
+  }
+  
+  Mix2_temp <- FCS_pool(x = flow_set_temp_concat, stub = "Mix2")
+  new_name_mix_temp <- paste("Mix2", i, sep = "_")
+  sampleNames(Mix2_temp) <- new_name_mix_temp
+  
+  if (i == 1) {
+    flowData_Mix2 <- Mix2_temp
+  }
+  else {
+    flowData_Mix2 <- flowCore::rbind2(flowData_Mix2, Mix2_temp)
+  }
+  
+  rm(resample_temp_So, resample_temp_Fn, resample_temp_Pg, merged_temp, param_names, to_remove, param_indice, flow_frame_temp, flow_set_temp, new_name_temp, flow_set_temp_concat, Mix2_temp, new_name_mix_temp)
+}
+
+# Mix 3
+flowData_Mix3_So <- flowData_pooled_axenic[c(13)]
+flowData_Mix3_Fn <- flowData_pooled_axenic[c(5)]
+flowData_Mix3_Pg <- flowData_pooled_axenic[c(7)]
+flowData_Mix3_Vp <- flowData_pooled_axenic[c(18)]
+
+for (i in 1:10) {
+  set.seed(sample(1:1000, 1))
+  resample_temp_So <- Phenoflow::FCS_resample(flowData_Mix3_So, sample = theoretical_mocks_counts["Mix3", "So"])
+  resample_temp_Fn <- Phenoflow::FCS_resample(flowData_Mix3_Fn, sample = theoretical_mocks_counts["Mix3", "Fn"])
+  resample_temp_Pg <- Phenoflow::FCS_resample(flowData_Mix3_Pg, sample = theoretical_mocks_counts["Mix3", "Pg"])
+  resample_temp_Vp <- Phenoflow::FCS_resample(flowData_Mix3_Vp, sample = theoretical_mocks_counts["Mix3", "Vp"])
+  merged_temp <- flowCore::rbind2(resample_temp_So, resample_temp_Fn)
+  merged_temp <- flowCore::rbind2(merged_temp, resample_temp_Pg)
+  merged_temp <- flowCore::rbind2(merged_temp, resample_temp_Vp)
+  
+  param_names <- names(merged_temp[[1]])
+  to_remove <- "<Original> Original"
+  param_indice <- which(param_names == to_remove)
+  
+  for (j in seq_along(merged_temp@frames)) {
+    flow_frame_temp <- merged_temp[[j]][, -param_indice]
+    flow_set_temp <- flowCore::flowSet(flow_frame_temp)
+    new_name_temp <- paste("Mix3", j, sep = "_")
+    sampleNames(flow_set_temp) <- new_name_temp
+    if (j == 1) {
+      flow_set_temp_concat <- flow_set_temp
+    }
+    else {
+      flow_set_temp_concat <- flowCore::rbind2(flow_set_temp_concat, flow_set_temp)
+    }
+  }
+  
+  Mix3_temp <- FCS_pool(x = flow_set_temp_concat, stub = "Mix3")
+  new_name_mix_temp <- paste("Mix3", i, sep = "_")
+  sampleNames(Mix3_temp) <- new_name_mix_temp
+  
+  if (i == 1) {
+    flowData_Mix3 <- Mix3_temp
+  }
+  else {
+    flowData_Mix3 <- flowCore::rbind2(flowData_Mix3, Mix3_temp)
+  }
+  
+  rm(resample_temp_So, resample_temp_Fn, resample_temp_Pg, resample_temp_Vp, merged_temp, param_names, to_remove, param_indice, flow_frame_temp, flow_set_temp, new_name_temp, flow_set_temp_concat, Mix3_temp, new_name_mix_temp)
+}
+
+# Mix 4
+flowData_Mix4_An <- flowData_pooled_axenic[c(2)]
+flowData_Mix4_Av <- flowData_pooled_axenic[c(3)]
+flowData_Mix4_Sg <- flowData_pooled_axenic[c(9)]
+flowData_Mix4_Smi <- flowData_pooled_axenic[c(10)]
+flowData_Mix4_So <- flowData_pooled_axenic[c(13)]
+flowData_Mix4_Ssal <- flowData_pooled_axenic[c(15)]
+flowData_Mix4_Ssan <- flowData_pooled_axenic[c(16)]
+flowData_Mix4_Vp <- flowData_pooled_axenic[c(18)]
+
+for (i in 1:10) {
+  set.seed(sample(1:1000, 1))
+  resample_temp_An <- Phenoflow::FCS_resample(flowData_Mix4_An, sample = theoretical_mocks_counts["Mix4", "An"])
+  resample_temp_Av <- Phenoflow::FCS_resample(flowData_Mix4_Av, sample = theoretical_mocks_counts["Mix4", "Av"])
+  resample_temp_Sg <- Phenoflow::FCS_resample(flowData_Mix4_Sg, sample = theoretical_mocks_counts["Mix4", "Sg"])
+  resample_temp_Smi <- Phenoflow::FCS_resample(flowData_Mix4_Smi, sample = theoretical_mocks_counts["Mix4", "Smi"])
+  resample_temp_So <- Phenoflow::FCS_resample(flowData_Mix4_So, sample = theoretical_mocks_counts["Mix4", "So"])
+  resample_temp_Ssal <- Phenoflow::FCS_resample(flowData_Mix4_Ssal, sample = theoretical_mocks_counts["Mix4", "Ssal"])
+  resample_temp_Ssan <- Phenoflow::FCS_resample(flowData_Mix4_Ssan, sample = theoretical_mocks_counts["Mix4", "Ssan"])
+  resample_temp_Vp <- Phenoflow::FCS_resample(flowData_Mix4_Vp, sample = theoretical_mocks_counts["Mix4", "Vp"])
+  merged_temp <- flowCore::rbind2(resample_temp_An, resample_temp_Av)
+  merged_temp <- flowCore::rbind2(merged_temp, resample_temp_Sg)
+  merged_temp <- flowCore::rbind2(merged_temp, resample_temp_Smi)
+  merged_temp <- flowCore::rbind2(merged_temp, resample_temp_So)
+  merged_temp <- flowCore::rbind2(merged_temp, resample_temp_Ssal)
+  merged_temp <- flowCore::rbind2(merged_temp, resample_temp_Ssan)
+  merged_temp <- flowCore::rbind2(merged_temp, resample_temp_Vp)
+  
+  param_names <- names(merged_temp[[1]])
+  to_remove <- "<Original> Original"
+  param_indice <- which(param_names == to_remove)
+  
+  for (j in seq_along(merged_temp@frames)) {
+    flow_frame_temp <- merged_temp[[j]][, -param_indice]
+    flow_set_temp <- flowCore::flowSet(flow_frame_temp)
+    new_name_temp <- paste("Mix4", j, sep = "_")
+    sampleNames(flow_set_temp) <- new_name_temp
+    if (j == 1) {
+      flow_set_temp_concat <- flow_set_temp
+    }
+    else {
+      flow_set_temp_concat <- flowCore::rbind2(flow_set_temp_concat, flow_set_temp)
+    }
+  }
+  
+  Mix4_temp <- FCS_pool(x = flow_set_temp_concat, stub = "Mix4")
+  new_name_mix_temp <- paste("Mix4", i, sep = "_")
+  sampleNames(Mix4_temp) <- new_name_mix_temp
+  
+  if (i == 1) {
+    flowData_Mix4 <- Mix4_temp
+  }
+  else {
+    flowData_Mix4 <- flowCore::rbind2(flowData_Mix4, Mix4_temp)
+  }
+  
+  rm(resample_temp_An, resample_temp_Av, resample_temp_Sg, resample_temp_Smi, resample_temp_So, resample_temp_Ssal, resample_temp_Ssan, resample_temp_Vp, merged_temp, param_names, to_remove, param_indice, flow_frame_temp, flow_set_temp, new_name_temp, flow_set_temp_concat, Mix4_temp, new_name_mix_temp)
+}
+
+# Mix 5
+flowData_Mix5_Sg <- flowData_pooled_axenic[c(9)]
+flowData_Mix5_Smi <- flowData_pooled_axenic[c(10)]
+flowData_Mix5_Smu <- flowData_pooled_axenic[c(11)]
+flowData_Mix5_So <- flowData_pooled_axenic[c(13)]
+flowData_Mix5_Ssal <- flowData_pooled_axenic[c(15)]
+flowData_Mix5_Ssan <- flowData_pooled_axenic[c(16)]
+flowData_Mix5_Ssob <- flowData_pooled_axenic[c(17)]
+
+for (i in 1:10) {
+  set.seed(sample(1:1000, 1))
+  resample_temp_Sg <- Phenoflow::FCS_resample(flowData_Mix5_Sg, sample = theoretical_mocks_counts["Mix5", "Sg"])
+  resample_temp_Smi <- Phenoflow::FCS_resample(flowData_Mix5_Smi, sample = theoretical_mocks_counts["Mix5", "Smi"])
+  resample_temp_Smu <- Phenoflow::FCS_resample(flowData_Mix5_Smu, sample = theoretical_mocks_counts["Mix5", "Smu"])
+  resample_temp_So <- Phenoflow::FCS_resample(flowData_Mix5_So, sample = theoretical_mocks_counts["Mix5", "So"])
+  resample_temp_Ssal <- Phenoflow::FCS_resample(flowData_Mix5_Ssal, sample = theoretical_mocks_counts["Mix5", "Ssal"])
+  resample_temp_Ssan <- Phenoflow::FCS_resample(flowData_Mix5_Ssan, sample = theoretical_mocks_counts["Mix5", "Ssan"])
+  resample_temp_Ssob <- Phenoflow::FCS_resample(flowData_Mix5_Ssob, sample = theoretical_mocks_counts["Mix5", "Ssob"])
+  merged_temp <- flowCore::rbind2(resample_temp_Sg, resample_temp_Smi)
+  merged_temp <- flowCore::rbind2(merged_temp, resample_temp_Smu)
+  merged_temp <- flowCore::rbind2(merged_temp, resample_temp_So)
+  merged_temp <- flowCore::rbind2(merged_temp, resample_temp_Ssal)
+  merged_temp <- flowCore::rbind2(merged_temp, resample_temp_Ssan)
+  merged_temp <- flowCore::rbind2(merged_temp, resample_temp_Ssob)
+  
+  param_names <- names(merged_temp[[1]])
+  to_remove <- "<Original> Original"
+  param_indice <- which(param_names == to_remove)
+  
+  for (j in seq_along(merged_temp@frames)) {
+    flow_frame_temp <- merged_temp[[j]][, -param_indice]
+    flow_set_temp <- flowCore::flowSet(flow_frame_temp)
+    new_name_temp <- paste("Mix5", j, sep = "_")
+    sampleNames(flow_set_temp) <- new_name_temp
+    if (j == 1) {
+      flow_set_temp_concat <- flow_set_temp
+    }
+    else {
+      flow_set_temp_concat <- flowCore::rbind2(flow_set_temp_concat, flow_set_temp)
+    }
+  }
+  
+  Mix5_temp <- FCS_pool(x = flow_set_temp_concat, stub = "Mix5")
+  new_name_mix_temp <- paste("Mix5", i, sep = "_")
+  sampleNames(Mix5_temp) <- new_name_mix_temp
+  
+  if (i == 1) {
+    flowData_Mix5 <- Mix5_temp
+  }
+  else {
+    flowData_Mix5 <- flowCore::rbind2(flowData_Mix5, Mix5_temp)
+  }
+  
+  rm(resample_temp_Sg, resample_temp_Smi, resample_temp_Smu, resample_temp_So, resample_temp_Ssal, resample_temp_Ssan, resample_temp_Ssob, merged_temp, param_names, to_remove, param_indice, flow_frame_temp, flow_set_temp, new_name_temp, flow_set_temp_concat, Mix5_temp, new_name_mix_temp)
+}
+
+# Mix 6
+flowData_Mix6_Aa <- flowData_pooled_axenic[c(1)]
+flowData_Mix6_Fn <- flowData_pooled_axenic[c(5)]
+flowData_Mix6_Pg <- flowData_pooled_axenic[c(7)]
+flowData_Mix6_Pi <- flowData_pooled_axenic[c(8)]
+flowData_Mix6_Smu <- flowData_pooled_axenic[c(11)]
+flowData_Mix6_Ssob <- flowData_pooled_axenic[c(17)]
+
+for (i in 1:10) {
+  set.seed(sample(1:1000, 1))
+  resample_temp_Aa <- Phenoflow::FCS_resample(flowData_Mix6_Aa, sample = theoretical_mocks_counts["Mix6", "Aa"])
+  resample_temp_Fn <- Phenoflow::FCS_resample(flowData_Mix6_Fn, sample = theoretical_mocks_counts["Mix6", "Fn"])
+  resample_temp_Pg <- Phenoflow::FCS_resample(flowData_Mix6_Pg, sample = theoretical_mocks_counts["Mix6", "Pg"])
+  resample_temp_Pi <- Phenoflow::FCS_resample(flowData_Mix6_Pi, sample = theoretical_mocks_counts["Mix6", "Pi"])
+  resample_temp_Smu <- Phenoflow::FCS_resample(flowData_Mix6_Smu, sample = theoretical_mocks_counts["Mix6", "Smu"])
+  resample_temp_Ssob <- Phenoflow::FCS_resample(flowData_Mix6_Ssob, sample = theoretical_mocks_counts["Mix6", "Ssob"])
+  merged_temp <- flowCore::rbind2(resample_temp_Aa, resample_temp_Fn)
+  merged_temp <- flowCore::rbind2(merged_temp, resample_temp_Pg)
+  merged_temp <- flowCore::rbind2(merged_temp, resample_temp_Pi)
+  merged_temp <- flowCore::rbind2(merged_temp, resample_temp_Smu)
+  merged_temp <- flowCore::rbind2(merged_temp, resample_temp_Ssob)
+  
+  param_names <- names(merged_temp[[1]])
+  to_remove <- "<Original> Original"
+  param_indice <- which(param_names == to_remove)
+  
+  for (j in seq_along(merged_temp@frames)) {
+    flow_frame_temp <- merged_temp[[j]][, -param_indice]
+    flow_set_temp <- flowCore::flowSet(flow_frame_temp)
+    new_name_temp <- paste("Mix6", j, sep = "_")
+    sampleNames(flow_set_temp) <- new_name_temp
+    if (j == 1) {
+      flow_set_temp_concat <- flow_set_temp
+    }
+    else {
+      flow_set_temp_concat <- flowCore::rbind2(flow_set_temp_concat, flow_set_temp)
+    }
+  }
+  
+  Mix6_temp <- FCS_pool(x = flow_set_temp_concat, stub = "Mix6")
+  new_name_mix_temp <- paste("Mix6", i, sep = "_")
+  sampleNames(Mix6_temp) <- new_name_mix_temp
+  
+  if (i == 1) {
+    flowData_Mix6 <- Mix6_temp
+  }
+  else {
+    flowData_Mix6 <- flowCore::rbind2(flowData_Mix6, Mix6_temp)
+  }
+  
+  rm(resample_temp_Aa, resample_temp_Fn, resample_temp_Pg, resample_temp_Pi, resample_temp_Smu, resample_temp_Ssob, merged_temp, param_names, to_remove, param_indice, flow_frame_temp, flow_set_temp, new_name_temp, flow_set_temp_concat, Mix6_temp, new_name_mix_temp)
+}
+
+# Mix 7
+flowData_Mix7_Aa <- flowData_pooled_axenic[c(1)]
+flowData_Mix7_An <- flowData_pooled_axenic[c(2)]
+flowData_Mix7_Av <- flowData_pooled_axenic[c(3)]
+flowData_Mix7_Fn <- flowData_pooled_axenic[c(5)]
+flowData_Mix7_Pg <- flowData_pooled_axenic[c(7)]
+flowData_Mix7_Pi <- flowData_pooled_axenic[c(8)]
+flowData_Mix7_Sg <- flowData_pooled_axenic[c(9)]
+flowData_Mix7_Smi <- flowData_pooled_axenic[c(10)]
+flowData_Mix7_Smu <- flowData_pooled_axenic[c(11)]
+flowData_Mix7_So <- flowData_pooled_axenic[c(13)]
+flowData_Mix7_Ssal <- flowData_pooled_axenic[c(15)]
+flowData_Mix7_Ssan <- flowData_pooled_axenic[c(16)]
+flowData_Mix7_Ssob <- flowData_pooled_axenic[c(17)]
+flowData_Mix7_Vp <- flowData_pooled_axenic[c(18)]
+
+for (i in 1:10) {
+  set.seed(sample(1:1000, 1))
+  resample_temp_Aa <- Phenoflow::FCS_resample(flowData_Mix7_Aa, sample = theoretical_mocks_counts["Mix7", "Aa"])
+  resample_temp_An <- Phenoflow::FCS_resample(flowData_Mix7_An, sample = theoretical_mocks_counts["Mix7", "An"])
+  resample_temp_Av <- Phenoflow::FCS_resample(flowData_Mix7_Av, sample = theoretical_mocks_counts["Mix7", "Av"])
+  resample_temp_Fn <- Phenoflow::FCS_resample(flowData_Mix7_Fn, sample = theoretical_mocks_counts["Mix7", "Fn"])
+  resample_temp_Pg <- Phenoflow::FCS_resample(flowData_Mix7_Pg, sample = theoretical_mocks_counts["Mix7", "Pg"])
+  resample_temp_Pi <- Phenoflow::FCS_resample(flowData_Mix7_Pi, sample = theoretical_mocks_counts["Mix7", "Pi"])
+  resample_temp_Sg <- Phenoflow::FCS_resample(flowData_Mix7_Sg, sample = theoretical_mocks_counts["Mix7", "Sg"])
+  resample_temp_Smi <- Phenoflow::FCS_resample(flowData_Mix7_Smi, sample = theoretical_mocks_counts["Mix7", "Smi"])
+  resample_temp_Smu <- Phenoflow::FCS_resample(flowData_Mix7_Smu, sample = theoretical_mocks_counts["Mix7", "Smu"])
+  resample_temp_So <- Phenoflow::FCS_resample(flowData_Mix7_So, sample = theoretical_mocks_counts["Mix7", "So"])
+  resample_temp_Ssal <- Phenoflow::FCS_resample(flowData_Mix7_Ssal, sample = theoretical_mocks_counts["Mix7", "Ssal"])
+  resample_temp_Ssan <- Phenoflow::FCS_resample(flowData_Mix7_Ssan, sample = theoretical_mocks_counts["Mix7", "Ssan"])
+  resample_temp_Ssob <- Phenoflow::FCS_resample(flowData_Mix7_Ssob, sample = theoretical_mocks_counts["Mix7", "Ssob"])
+  resample_temp_Vp <- Phenoflow::FCS_resample(flowData_Mix7_Vp, sample = theoretical_mocks_counts["Mix7", "Vp"])
+  merged_temp <- flowCore::rbind2(resample_temp_Aa, resample_temp_An)
+  merged_temp <- flowCore::rbind2(merged_temp, resample_temp_Av)
+  merged_temp <- flowCore::rbind2(merged_temp, resample_temp_Fn)
+  merged_temp <- flowCore::rbind2(merged_temp, resample_temp_Pg)
+  merged_temp <- flowCore::rbind2(merged_temp, resample_temp_Pi)
+  merged_temp <- flowCore::rbind2(merged_temp, resample_temp_Sg)
+  merged_temp <- flowCore::rbind2(merged_temp, resample_temp_Smi)
+  merged_temp <- flowCore::rbind2(merged_temp, resample_temp_Smu)
+  merged_temp <- flowCore::rbind2(merged_temp, resample_temp_So)
+  merged_temp <- flowCore::rbind2(merged_temp, resample_temp_Ssal)
+  merged_temp <- flowCore::rbind2(merged_temp, resample_temp_Ssan)
+  merged_temp <- flowCore::rbind2(merged_temp, resample_temp_Ssob)
+  merged_temp <- flowCore::rbind2(merged_temp, resample_temp_Vp)
+  
+  param_names <- names(merged_temp[[1]])
+  to_remove <- "<Original> Original"
+  param_indice <- which(param_names == to_remove)
+  
+  for (j in seq_along(merged_temp@frames)) {
+    flow_frame_temp <- merged_temp[[j]][, -param_indice]
+    flow_set_temp <- flowCore::flowSet(flow_frame_temp)
+    new_name_temp <- paste("Mix7", j, sep = "_")
+    sampleNames(flow_set_temp) <- new_name_temp
+    if (j == 1) {
+      flow_set_temp_concat <- flow_set_temp
+    }
+    else {
+      flow_set_temp_concat <- flowCore::rbind2(flow_set_temp_concat, flow_set_temp)
+    }
+  }
+  
+  Mix7_temp <- FCS_pool(x = flow_set_temp_concat, stub = "Mix7")
+  new_name_mix_temp <- paste("Mix7", i, sep = "_")
+  sampleNames(Mix7_temp) <- new_name_mix_temp
+  
+  if (i == 1) {
+    flowData_Mix7 <- Mix7_temp
+  }
+  else {
+    flowData_Mix7 <- flowCore::rbind2(flowData_Mix7, Mix7_temp)
+  }
+  
+  rm(resample_temp_Aa, resample_temp_An, resample_temp_Av, resample_temp_Fn, resample_temp_Pg, resample_temp_Pi, resample_temp_Sg, resample_temp_Smi, resample_temp_Smu, resample_temp_So, resample_temp_Ssal, resample_temp_Ssan, resample_temp_Ssob, resample_temp_Vp, merged_temp, param_names, to_remove, param_indice, flow_frame_temp, flow_set_temp, new_name_temp, flow_set_temp_concat, Mix7_temp, new_name_mix_temp)
+}
+
+# Mix 8
+flowData_Mix8_So <- flowData_pooled_axenic[c(14)]
+flowData_Mix8_Fn <- flowData_pooled_axenic[c(4)]
+
+for (i in 1:10) {
+  set.seed(sample(1:1000, 1))
+  resample_temp_So <- Phenoflow::FCS_resample(flowData_Mix8_So, sample = theoretical_mocks_counts["Mix8", "So"])
+  resample_temp_Fn <- Phenoflow::FCS_resample(flowData_Mix8_Fn, sample = theoretical_mocks_counts["Mix8", "Fn"])
+  merged_temp <- flowCore::rbind2(resample_temp_So, resample_temp_Fn)
+  
+  param_names <- names(merged_temp[[1]])
+  to_remove <- "<Original> Original"
+  param_indice <- which(param_names == to_remove)
+  
+  for (j in seq_along(merged_temp@frames)) {
+    flow_frame_temp <- merged_temp[[j]][, -param_indice]
+    flow_set_temp <- flowCore::flowSet(flow_frame_temp)
+    new_name_temp <- paste("Mix8", j, sep = "_")
+    sampleNames(flow_set_temp) <- new_name_temp
+    if (j == 1) {
+      flow_set_temp_concat <- flow_set_temp
+    }
+    else {
+      flow_set_temp_concat <- flowCore::rbind2(flow_set_temp_concat, flow_set_temp)
+    }
+  }
+  
+  Mix8_temp <- FCS_pool(x = flow_set_temp_concat, stub = "Mix8")
+  new_name_mix_temp <- paste("Mix8", i, sep = "_")
+  sampleNames(Mix8_temp) <- new_name_mix_temp
+  
+  if (i == 1) {
+    flowData_Mix8 <- Mix8_temp
+  }
+  else {
+    flowData_Mix8 <- flowCore::rbind2(flowData_Mix8, Mix8_temp)
+  }
+  
+  rm(resample_temp_So, resample_temp_Fn, merged_temp, param_names, to_remove, param_indice, flow_frame_temp, flow_set_temp, new_name_temp, flow_set_temp_concat, Mix8_temp, new_name_mix_temp)
+}
+
+# Mix 9
+flowData_Mix9_So <- flowData_pooled_axenic[c(14)]
+flowData_Mix9_Fn <- flowData_pooled_axenic[c(6)]
+
+for (i in 1:10) {
+  set.seed(sample(1:1000, 1))
+  resample_temp_So <- Phenoflow::FCS_resample(flowData_Mix9_So, sample = theoretical_mocks_counts["Mix9", "So"])
+  resample_temp_Fn <- Phenoflow::FCS_resample(flowData_Mix9_Fn, sample = theoretical_mocks_counts["Mix9", "Fn"])
+  merged_temp <- flowCore::rbind2(resample_temp_So, resample_temp_Fn)
+  
+  param_names <- names(merged_temp[[1]])
+  to_remove <- "<Original> Original"
+  param_indice <- which(param_names == to_remove)
+  
+  for (j in seq_along(merged_temp@frames)) {
+    flow_frame_temp <- merged_temp[[j]][, -param_indice]
+    flow_set_temp <- flowCore::flowSet(flow_frame_temp)
+    new_name_temp <- paste("Mix9", j, sep = "_")
+    sampleNames(flow_set_temp) <- new_name_temp
+    if (j == 1) {
+      flow_set_temp_concat <- flow_set_temp
+    }
+    else {
+      flow_set_temp_concat <- flowCore::rbind2(flow_set_temp_concat, flow_set_temp)
+    }
+  }
+  
+  Mix9_temp <- FCS_pool(x = flow_set_temp_concat, stub = "Mix9")
+  new_name_mix_temp <- paste("Mix9", i, sep = "_")
+  sampleNames(Mix9_temp) <- new_name_mix_temp
+  
+  if (i == 1) {
+    flowData_Mix9 <- Mix9_temp
+  }
+  else {
+    flowData_Mix9 <- flowCore::rbind2(flowData_Mix9, Mix9_temp)
+  }
+  
+  rm(resample_temp_So, resample_temp_Fn, merged_temp, param_names, to_remove, param_indice, flow_frame_temp, flow_set_temp, new_name_temp, flow_set_temp_concat, Mix9_temp, new_name_mix_temp)
+}
+
+
+### 8.4.2. Predict in silico mocks ----
+# Mix 1
+pred_mock1_silico <- RandomF_predict(x = Model_RF_SoFn_pooled[[1]], new_data = flowData_Mix1, cleanFCS = FALSE)
+pred_mock1_silico <- reshape2::dcast(pred_mock1_silico, Sample ~ Predicted_label)
+pred_mock1_silico <- data.frame(ID = "Mock 1",
+                                So = mean(pred_mock1_silico$So), So_sd = sd(pred_mock1_silico$So),
+                                Fn = mean(pred_mock1_silico$Fn), Fn_sd = sd(pred_mock1_silico$Fn))
+
+# Mix 2
+pred_mock2_silico <- RandomF_predict(x = Model_RF_SoFnPg_pooled[[1]], new_data = flowData_Mix2, cleanFCS = FALSE)
+pred_mock2_silico <- reshape2::dcast(pred_mock2_silico, Sample ~ Predicted_label)
+pred_mock2_silico <- data.frame(ID = "Mock 2",
+                                So = mean(pred_mock2_silico$So), So_sd = sd(pred_mock2_silico$So),
+                                Fn = mean(pred_mock2_silico$Fn), Fn_sd = sd(pred_mock2_silico$Fn),
+                                Pg = mean(pred_mock2_silico$Pg), Pg_sd = sd(pred_mock2_silico$Pg))
+
+# Mix 3
+pred_mock3_silico <- RandomF_predict(x = Model_RF_SoFnPgVp_pooled[[1]], new_data = flowData_Mix3, cleanFCS = FALSE)
+pred_mock3_silico <- reshape2::dcast(pred_mock3_silico, Sample ~ Predicted_label)
+pred_mock3_silico <- data.frame(ID = "Mock 3",
+                                So = mean(pred_mock3_silico$So), So_sd = sd(pred_mock3_silico$So),
+                                Fn = mean(pred_mock3_silico$Fn), Fn_sd = sd(pred_mock3_silico$Fn),
+                                Pg = mean(pred_mock3_silico$Pg), Pg_sd = sd(pred_mock3_silico$Pg),
+                                Vp = mean(pred_mock3_silico$Vp), Vp_sd = sd(pred_mock3_silico$Vp))
+
+# Mix 4
+pred_mock4_silico <- RandomF_predict(x = Model_RF_AnAvSgSmiSoSsalSsanVp_pooled[[1]], new_data = flowData_Mix4, cleanFCS = FALSE)
+pred_mock4_silico <- reshape2::dcast(pred_mock4_silico, Sample ~ Predicted_label)
+pred_mock4_silico <- data.frame(ID = "Mock 4",
+                                An = mean(pred_mock4_silico$An), An_sd = sd(pred_mock4_silico$An),
+                                Av = mean(pred_mock4_silico$Av), Av_sd = sd(pred_mock4_silico$Av),
+                                Sg = mean(pred_mock4_silico$Sg), Sg_sd = sd(pred_mock4_silico$Sg),
+                                Smi = mean(pred_mock4_silico$Smi), Smi_sd = sd(pred_mock4_silico$Smi),
+                                So = mean(pred_mock4_silico$So), So_sd = sd(pred_mock4_silico$So),
+                                Ssal = mean(pred_mock4_silico$Ssal), Ssal_sd = sd(pred_mock4_silico$Ssal),
+                                Ssan = mean(pred_mock4_silico$Ssan), Ssan_sd = sd(pred_mock4_silico$Ssan),
+                                Vp = mean(pred_mock4_silico$Vp), Vp_sd = sd(pred_mock4_silico$Vp))
+
+# Mix 5
+pred_mock5_silico <- RandomF_predict(x = Model_RF_SgSmiSmuSoSsalSsanSsob_pooled[[1]], new_data = flowData_Mix5, cleanFCS = FALSE)
+pred_mock5_silico <- reshape2::dcast(pred_mock5_silico, Sample ~ Predicted_label)
+pred_mock5_silico <- data.frame(ID = "Mock 5",
+                                Sg = mean(pred_mock5_silico$Sg), Sg_sd = sd(pred_mock5_silico$Sg),
+                                Smi = mean(pred_mock5_silico$Smi), Smi_sd = sd(pred_mock5_silico$Smi),
+                                Smu = mean(pred_mock5_silico$Smu), Smu_sd = sd(pred_mock5_silico$Smu),
+                                So = mean(pred_mock5_silico$So), So_sd = sd(pred_mock5_silico$So),
+                                Ssal = mean(pred_mock5_silico$Ssal), Ssal_sd = sd(pred_mock5_silico$Ssal),
+                                Ssan = mean(pred_mock5_silico$Ssan), Ssan_sd = sd(pred_mock5_silico$Ssan),
+                                Ssob = mean(pred_mock5_silico$Ssob), Ssob_sd = sd(pred_mock5_silico$Ssob))
+
+# Mix 6
+pred_mock6_silico <- RandomF_predict(x = Model_RF_AaFnPgPiSmuSsob_pooled[[1]], new_data = flowData_Mix6, cleanFCS = FALSE)
+pred_mock6_silico <- reshape2::dcast(pred_mock6_silico, Sample ~ Predicted_label)
+pred_mock6_silico <- data.frame(ID = "Mock 6",
+                                Aa = mean(pred_mock6_silico$Aa), Aa_sd = sd(pred_mock6_silico$Aa),
+                                Fn = mean(pred_mock6_silico$Fn), Fn_sd = sd(pred_mock6_silico$Fn),
+                                Pg = mean(pred_mock6_silico$Pg), Pg_sd = sd(pred_mock6_silico$Pg),
+                                Pi = mean(pred_mock6_silico$Pi), Pi_sd = sd(pred_mock6_silico$Pi),
+                                Smu = mean(pred_mock6_silico$Smu), Smu_sd = sd(pred_mock6_silico$Smu),
+                                Ssob = mean(pred_mock6_silico$Ssob), Ssob_sd = sd(pred_mock6_silico$Ssob))
+
+# Mix 7
+pred_mock7_silico <- RandomF_predict(x = Model_RF_AllStrains_pooled[[1]], new_data = flowData_Mix7, cleanFCS = FALSE)
+pred_mock7_silico <- reshape2::dcast(pred_mock7_silico, Sample ~ Predicted_label)
+pred_mock7_silico <- data.frame(ID = "Mock 7",
+                                Aa = mean(pred_mock7_silico$Aa), Aa_sd = sd(pred_mock7_silico$Aa),
+                                An = mean(pred_mock7_silico$An), An_sd = sd(pred_mock7_silico$An),
+                                Av = mean(pred_mock7_silico$Av), Av_sd = sd(pred_mock7_silico$Av),
+                                Fn = mean(pred_mock7_silico$Fn), Fn_sd = sd(pred_mock7_silico$Fn),
+                                Pg = mean(pred_mock7_silico$Pg), Pg_sd = sd(pred_mock7_silico$Pg),
+                                Pi = mean(pred_mock7_silico$Pi), Pi_sd = sd(pred_mock7_silico$Pi),
+                                Sg = mean(pred_mock7_silico$Sg), Sg_sd = sd(pred_mock7_silico$Sg),
+                                Smi = mean(pred_mock7_silico$Smi), Smi_sd = sd(pred_mock7_silico$Smi),
+                                Smu = mean(pred_mock7_silico$Smu), Smu_sd = sd(pred_mock7_silico$Smu),
+                                So = mean(pred_mock7_silico$So), So_sd = sd(pred_mock7_silico$So),
+                                Ssal = mean(pred_mock7_silico$Ssal), Ssal_sd = sd(pred_mock7_silico$Ssal),
+                                Ssan = mean(pred_mock7_silico$Ssan), Ssan_sd = sd(pred_mock7_silico$Ssan),
+                                Ssob = mean(pred_mock7_silico$Ssob), Ssob_sd = sd(pred_mock7_silico$Ssob),
+                                Vp = mean(pred_mock7_silico$Vp), Vp_sd = sd(pred_mock7_silico$Vp))
+
+# Mix 8
+pred_mock8_silico <- RandomF_predict(x = Model_RF_SoFn_pooled[[1]], new_data = flowData_Mix8, cleanFCS = FALSE)
+pred_mock8_silico <- reshape2::dcast(pred_mock8_silico, Sample ~ Predicted_label)
+pred_mock8_silico <- data.frame(ID = "Mock 8",
+                                So = mean(pred_mock8_silico$So), So_sd = sd(pred_mock8_silico$So),
+                                Fn = mean(pred_mock8_silico$Fn), Fn_sd = sd(pred_mock8_silico$Fn))
+
+# Mix 9
+pred_mock9_silico <- RandomF_predict(x = Model_RF_SoFn_pooled[[1]], new_data = flowData_Mix9, cleanFCS = FALSE)
+pred_mock9_silico <- reshape2::dcast(pred_mock9_silico, Sample ~ Predicted_label)
+pred_mock9_silico <- data.frame(ID = "Mock 9",
+                                So = mean(pred_mock9_silico$So), So_sd = sd(pred_mock9_silico$So),
+                                Fn = mean(pred_mock9_silico$Fn), Fn_sd = sd(pred_mock9_silico$Fn))
+
+# Combine all mocks in one data frame
+pred_mocks_silico <- dplyr::bind_rows(pred_mock1_silico, pred_mock2_silico, pred_mock3_silico, pred_mock4_silico, pred_mock5_silico,
+                                      pred_mock6_silico, pred_mock7_silico, pred_mock8_silico, pred_mock9_silico)
+
+pred_mocks_silico[is.na(pred_mocks_silico)] <- 0
+saveRDS(object = pred_mocks_silico, file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RDS_objects/predictions_mocks_silico.rds")
