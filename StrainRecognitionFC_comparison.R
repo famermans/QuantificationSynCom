@@ -221,6 +221,19 @@ theoretical_mocks_prop2 <- theoretical_mocks_prop[, c(1:14, 16:17)]
 mocks_12k <- rbind(FCM_mean_prop_12k_2, theoretical_mocks_prop2)
 row.names(mocks_12k) <- NULL
 
+# Predictions in silico mocks
+FCM_silico <- readRDS(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RDS_objects/predictions_mocks_silico.rds")
+FCM_silico_mean <- FCM_silico[, c("ID", "Aa", "An", "Av", "Fn", "Pg", "Pi", "Sg", "Smi", "Smu", "So", "Ssal", "Ssan", "Ssob", "Vp")]
+FCM_silico_mean_prop <- FCM_silico_mean
+FCM_silico_mean_prop[, -c(1)] <- sweep(as.matrix(FCM_silico_mean_prop[, -c(1)]), 1, rowSums(FCM_silico_mean_prop[, -c(1)]), FUN = "/")
+
+FCM_mean_prop_12k_2$Technique <- "FCM - In vitro"
+FCM_silico_mean_prop$Technique <- "FCM - In silico"
+mocks_12k_2 <- rbind(FCM_mean_prop_12k_2, FCM_silico_mean_prop, theoretical_mocks_prop2)
+row.names(mocks_12k_2) <- NULL
+mocks_12k_2$ID <- gsub("Mix", "Mock ", mocks_12k_2$ID)
+mocks_12k_2[, -c(1, 16)] <- mocks_12k_2[, -c(1, 16)]*100
+
 
 # 4. Calculate performance mocks compared to theoretical ----
 
@@ -266,6 +279,10 @@ for (i in seq_along(IDs_illumina)) {
 
 RMSE <- merge(RMSE_FCM, RMSE_qPCR, by = "ID", all = TRUE)
 RMSE <- merge(RMSE, RMSE_illumina, by = "ID", all = TRUE)
+
+# In silico mocks
+
+
 
 # 5. Visualization ----
 
@@ -424,6 +441,29 @@ plot_mocks_12k <- ggplot(data = mocks_12k_melted, aes(x = Technique, y = Relativ
                     labels = c("Fn" = expression(italic("F. nucleatum")), "Pg" = expression(italic("P. gingivalis")), "So" = expression(italic("S. oralis")), "Vp" = expression(italic("V. parvula")), "An" = expression(italic("A. naeslundii")), "Av" = expression(italic("A. viscosus")), "Aa" = expression(italic("A. actinomycetemcomitans")), "Sg" = expression(italic("S. gordonii")), "Smi" = expression(italic("S. mitis")), "Smu" = expression(italic("S. mutans")), "Pi" = expression(italic("P. intermedia")), "Ssal" = expression(italic("S. salivarius")), "Ssan" = expression(italic("S. sanguinis")), "Ssob" = expression(italic("S. sobrinus")))) +
   scale_x_discrete(labels = c("Actual" = "Actual", "FCM" = "FCM"))
 print(plot_mocks_12k)
+
+mocks_12k_2_melted <- reshape2::melt(mocks_12k_2, id.vars = c("ID", "Technique"), variable.name = c("Strain"), value.name = c("Relative_abundance"))
+mocks_12k_2_melted$Technique <- gsub("Theoretical", "Actual", mocks_12k_2_melted$Technique)
+
+plot_mocks_12k_2 <- ggplot(data = mocks_12k_2_melted, aes(x = Technique, y = Relative_abundance, fill = Strain)) +
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  facet_wrap(~ ID, nrow = length(unique(ID))) +
+  theme_bw() +
+  labs(x = "Technique", y = "Relative abundance (%)") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5),
+        legend.position = "bottom",
+        axis.text = element_text(size = 12),
+        axis.title.y = element_text(size = 16),
+        axis.title.x = element_blank(),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 16),
+        strip.text = element_text(size = 14),
+        legend.text.align = 0,
+        panel.grid = element_blank()) +
+  scale_fill_manual(values = c("Fn" = "#F8766D", "Pg" = "#E38900", "So" = "#C49A00", "Vp" = "#99A800", "An" = "#53B400", "Av" = "#00BC56", "Aa" = "#00C094", "Sg" = "#00BFC4", "Smi" = "#00B6EB", "Smu" = "#06A4FF", "Pi" = "#A58AFF", "Ssal" = "#DF70F8", "Ssan" = "#FB61D7", "Ssob" = "#FF66A8"),
+                    labels = c("Fn" = expression(italic("F. nucleatum")), "Pg" = expression(italic("P. gingivalis")), "So" = expression(italic("S. oralis")), "Vp" = expression(italic("V. parvula")), "An" = expression(italic("A. naeslundii")), "Av" = expression(italic("A. viscosus")), "Aa" = expression(italic("A. actinomycetemcomitans")), "Sg" = expression(italic("S. gordonii")), "Smi" = expression(italic("S. mitis")), "Smu" = expression(italic("S. mutans")), "Pi" = expression(italic("P. intermedia")), "Ssal" = expression(italic("S. salivarius")), "Ssan" = expression(italic("S. sanguinis")), "Ssob" = expression(italic("S. sobrinus")))) +
+  scale_x_discrete(labels = c("Actual" = "Actual", "FCM - In vitro" = expression(paste("FCM - ", italic("In vitro"))), "FCM - In silico" = expression(paste("FCM - ", italic("In silico")))))
+print(plot_mocks_12k_2)
 
 
 ## 5.2. Absolute abundance ----
