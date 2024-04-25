@@ -365,11 +365,7 @@ singlets_mocks <- merge(singlets_mocks, singlets_mean_mocks, by = "Mix_ID")
 singlets_melted <- reshape2::melt(singlets_mocks, id.vars = c("Mix_ID"))
 singlets_melted$type <- c(rep(c("Theoretical"), 15), rep(c("Measured"), 15))
 singlets_melted$type2 <- c(rep(c("Concentration"), 10), rep(c("Percentage"), 5), rep(c("Concentration"), 5), rep(c("Percentage"), 5), rep(c("Concentration"), 5))
-singlets_melted$Mix_ID <- gsub("Mix1", "Mock 1", singlets_melted$Mix_ID)
-singlets_melted$Mix_ID <- gsub("Mix2", "Mock 2", singlets_melted$Mix_ID)
-singlets_melted$Mix_ID <- gsub("Mix3", "Mock 3", singlets_melted$Mix_ID)
-singlets_melted$Mix_ID <- gsub("Mix8", "Mock 8", singlets_melted$Mix_ID)
-singlets_melted$Mix_ID <- gsub("Mix9", "Mock 9", singlets_melted$Mix_ID)
+singlets_melted$Mix_ID <- gsub("Mix", "Mock ", singlets_melted$Mix_ID)
 singlets_melted_concentration <- subset(singlets_melted, type2 == "Concentration")
 singlets_melted_concentration$population <- c(rep(c(rep(c("Singlets"), 5), rep(c("Total"), 5)), 2))
 singlets_melted_percentage <- subset(singlets_melted, type2 == "Percentage")
@@ -2622,3 +2618,94 @@ pred_mocks_silico <- dplyr::bind_rows(pred_mock1_silico, pred_mock2_silico, pred
 
 pred_mocks_silico[is.na(pred_mocks_silico)] <- 0
 saveRDS(object = pred_mocks_silico, file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RDS_objects/predictions_mocks_silico.rds")
+
+
+### 8.4.3. Singlet analysis ----
+# Create new flowSet containing all mixes where all replicates are pooled
+flowData_mocks_silico <- flowCore::rbind2(flowData_Mix1, flowData_Mix2)
+flowData_mocks_silico <- flowCore::rbind2(flowData_mocks_silico, flowData_Mix3)
+flowData_mocks_silico <- flowCore::rbind2(flowData_mocks_silico, flowData_Mix4)
+flowData_mocks_silico <- flowCore::rbind2(flowData_mocks_silico, flowData_Mix5)
+flowData_mocks_silico <- flowCore::rbind2(flowData_mocks_silico, flowData_Mix6)
+flowData_mocks_silico <- flowCore::rbind2(flowData_mocks_silico, flowData_Mix7)
+flowData_mocks_silico <- flowCore::rbind2(flowData_mocks_silico, flowData_Mix8)
+flowData_mocks_silico <- flowCore::rbind2(flowData_mocks_silico, flowData_Mix9)
+
+param_names_silico <- names(flowData_mocks_silico[[1]])
+to_remove_silico <- "<Original> Original"
+param_indice_silico <- which(param_names_silico == to_remove_silico)
+
+for (i in seq_along(flowData_mocks_silico@frames)) {
+  flow_frame_temp <- flowData_mocks_silico[[i]][, -param_indice_silico]
+  flow_set_temp <- flowCore::flowSet(flow_frame_temp)
+  new_name_temp <- sampleNames(flowData_mocks_silico)[i]
+  sampleNames(flow_set_temp) <- new_name_temp
+  if (i == 1) {
+    flowData_mocks_silico_2 <- flow_set_temp
+  }
+  else {
+    flowData_mocks_silico_2 <- flowCore::rbind2(flowData_mocks_silico_2, flow_set_temp)
+  }
+  
+  rm(flow_frame_temp, flow_set_temp, new_name_temp)
+}
+
+flowData_mocks_silico_pooled <- FCS_pool(x = flowData_mocks_silico_2, stub = c("Mix1", "Mix2", "Mix3", "Mix4", "Mix5", "Mix6", "Mix7", "Mix8", "Mix9"))
+
+singlets_silico <- flowCore::filter(flowData_mocks_silico_pooled, polyGateSinglets)
+SingletCount_silico <- summary(singlets_silico)
+SingletCount_silico <- toTable(SingletCount_silico)
+
+singlets_mean_invitro <- singlets_mean[singlets_mean$Strain %in% c("Mix1", "Mix2", "Mix3", "Mix4", "Mix5", "Mix6", "Mix7", "Mix8", "Mix9"), c(1, 5)]
+row.names(singlets_mean_invitro) <- NULL
+colnames(singlets_mean_invitro)[colnames(singlets_mean_invitro) == "Strain"] <- "ID"
+colnames(singlets_mean_invitro)[colnames(singlets_mean_invitro) == "percent"] <- "percentage_invitro"
+
+singlets_insilico <- SingletCount_silico[, c(1, 3)]
+colnames(singlets_insilico)[colnames(singlets_insilico) == "sample"] <- "ID"
+colnames(singlets_insilico)[colnames(singlets_insilico) == "percent"] <- "percentage_insilico"
+
+singlets_subset_silico <- subset(singlets_mean, Strain == "Aa" | Strain == "An" | Strain == "Av" | Strain == "Fn" | Strain == "Pg" | Strain == "Pi" | Strain == "Sg" | Strain == "Smi" | Strain == "Smu" | Strain == "So" | Strain == "Ssal" | Strain == "Ssan" | Strain == "Ssob" | Strain == "Vp" |
+                                   Strain == "Mix1" | Strain == "Mix2" | Strain == "Mix3" | Strain == "Mix4" | Strain == "Mix5" | Strain == "Mix6" | Strain == "Mix7" | Strain == "Mix8" | Strain == "Mix9")
+singlets_subset_silico2 <- singlets_subset_silico
+singlets_subset_silico2$Merge <- paste(singlets_subset_silico2$Strain, singlets_subset_silico2$Replicate, sep = "_")
+singlets_theoretical_silico <- merge(volumes_mocks, singlets_subset_silico2, by = "Merge")
+singlets_theoretical_silico <- singlets_theoretical_silico[, c(2:6, 10:12)]
+colnames(singlets_theoretical_silico)[colnames(singlets_theoretical_silico) == "Strain.x"] <- "Strain"
+colnames(singlets_theoretical_silico)[colnames(singlets_theoretical_silico) == "Replicate.x"] <- "Replicate"
+colnames(singlets_theoretical_silico)[colnames(singlets_theoretical_silico) == "concentration_singlets"] <- "concentration_axenic_singlets"
+colnames(singlets_theoretical_silico)[colnames(singlets_theoretical_silico) == "concentration_total"] <- "concentration_axenic_total"
+
+singlets_theoretical_silico$counts_axenic_singlets <- singlets_theoretical_silico$Volume*singlets_theoretical_silico$concentration_axenic_singlets
+singlets_theoretical_silico$concentration_mock_singlets <- singlets_theoretical_silico$counts_axenic_singlets/singlets_theoretical_silico$Total_volume
+singlets_theoretical_silico$counts_axenic_total <- singlets_theoretical_silico$Volume*singlets_theoretical_silico$concentration_axenic_total
+singlets_theoretical_silico$concentration_mock_total <- singlets_theoretical_silico$counts_axenic_total/singlets_theoretical_silico$Total_volume
+
+singlets_theoretical_silico <- singlets_theoretical_silico[, c(1, 2, 10, 12)]
+saveRDS(object = singlets_theoretical_mocks, file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RDS_objects/singlets_theoretical_silico.rds")
+
+singlets_theoretical_silico_sumsinglets <- aggregate(concentration_mock_singlets ~ Mix_ID, data = singlets_theoretical_silico, FUN = sum)
+singlets_theoretical_silico_sumtotal <- aggregate(concentration_mock_total ~ Mix_ID, data = singlets_theoretical_silico, FUN = sum)
+singlets_mocks_theoretical <- merge(singlets_theoretical_silico_sumsinglets, singlets_theoretical_silico_sumtotal, by = "Mix_ID")
+singlets_mocks_theoretical$percentage_theoretical <- (singlets_mocks_theoretical$concentration_mock_singlets/singlets_mocks_theoretical$concentration_mock_total)*100
+colnames(singlets_mocks_theoretical)[colnames(singlets_mocks_theoretical) == "concentration_mock_singlets"] <- "concentration_singlets_theoretical"
+colnames(singlets_mocks_theoretical)[colnames(singlets_mocks_theoretical) == "concentration_mock_total"] <- "concentration_total_theoretical"
+colnames(singlets_mocks_theoretical)[colnames(singlets_mocks_theoretical) == "Mix_ID"] <- "ID"
+
+singlets_mocks_theoretical_perc <- singlets_mocks_theoretical[, c("ID", "percentage_theoretical")]
+
+singlets_mocks_silico_merged <- merge(singlets_mean_invitro, singlets_insilico, by = "ID")
+singlets_mocks_silico_merged <- merge(singlets_mocks_silico_merged, singlets_mocks_theoretical_perc, by = "ID")
+
+singlets_mocks_silico_melted <- reshape2::melt(singlets_mocks_silico_merged, id.vars = c("ID"), variable.name = c("Technique"), value.name = c("Percent"))
+singlets_mocks_silico_melted$ID <- gsub("Mix", "Mock ", singlets_mocks_silico_melted$ID)
+
+plot_singlets_silico <- ggplot(data = singlets_mocks_silico_melted, aes(x = ID, y = Percent, color = Technique)) +
+  geom_point(size = 7, alpha = 0.6) +
+  labs(x = "Mock", y = "Relatvie abundance (%)", color = NULL) +
+  scale_color_manual(values = c("percentage_invitro" = "#A3A500", "percentage_insilico" = "darkred", "percentage_theoretical" = "blue3"),
+                     labels = c("percentage_invitro"= expression(paste("FCM - ", italic("In vitro"))), "percentage_insilico" = expression(paste("FCM - ", italic("In silico"))), "percentage_theoretical" = "Calculated")) +
+  paper_theme_fab +
+  theme(axis.title.x = element_blank()) +
+  scale_y_continuous(limits = c(50, 80), breaks = c(50, 60, 70, 80))
+print(plot_singlets_silico)
