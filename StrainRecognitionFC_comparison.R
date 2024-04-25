@@ -232,7 +232,6 @@ FCM_silico_mean_prop$Technique <- "FCM - In silico"
 mocks_12k_2 <- rbind(FCM_mean_prop_12k_2, FCM_silico_mean_prop, theoretical_mocks_prop2)
 row.names(mocks_12k_2) <- NULL
 mocks_12k_2$ID <- gsub("Mix", "Mock ", mocks_12k_2$ID)
-mocks_12k_2[, -c(1, 16)] <- mocks_12k_2[, -c(1, 16)]*100
 
 
 # 4. Calculate performance mocks compared to theoretical ----
@@ -281,7 +280,38 @@ RMSE <- merge(RMSE_FCM, RMSE_qPCR, by = "ID", all = TRUE)
 RMSE <- merge(RMSE, RMSE_illumina, by = "ID", all = TRUE)
 
 # In silico mocks
+RMSE_FCM_invitro <- readRDS(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RDS_objects/RMSE_FCM.rds")
+RMSE_FCM_invitro <- data.frame(ID = RMSE_FCM_invitro$ID,
+                               RMSE_invitro = c(RMSE_FCM_invitro[1, 2],
+                                                RMSE_FCM_invitro[2, 3],
+                                                RMSE_FCM_invitro[3, 4],
+                                                RMSE_FCM_invitro[4, 5],
+                                                RMSE_FCM_invitro[5, 6],
+                                                RMSE_FCM_invitro[6, 7],
+                                                RMSE_FCM_invitro[7, 8],
+                                                RMSE_FCM_invitro[8, 2],
+                                                RMSE_FCM_invitro[9, 2]))
 
+FCM_insilico <- mocks_12k_2[mocks_12k_2$Technique == "FCM - In silico", ]
+row.names(FCM_insilico) <- NULL
+FCM_insilico_longer <- tidyr::pivot_longer(FCM_insilico[, c(1:15)], cols = -ID, names_to = "Species", values_to = "FCM_Insilico")
+FCM_insilico_longer$ID <- gsub("Mock ", "Mix", FCM_insilico_longer$ID)
+
+merged_FCM_insilico <- merge(FCM_insilico_longer, theoretical_longer, by = c("ID", "Species"))
+
+IDs_FCM_insilico <- unique(merged_FCM_insilico$ID)
+RMSE_FCM_insilico <- data.frame(ID = IDs_FCM_insilico,
+                                RMSE_insilico = numeric(length(IDs_FCM_insilico)))
+
+for (i in seq_along(IDs_FCM_insilico)) {
+  ID <- IDs_FCM_insilico[i]
+  subset_df <- merged_FCM_insilico[merged_FCM_insilico$ID == ID, ]
+  RMSE_FCM_insilico$RMSE_insilico[i] <- sqrt(mean((subset_df$FCM_Insilico - subset_df$Actual)^2))
+}
+
+# RMSE 12k cells (in vitro vs in silico)
+RMSE_FCM_12k <- merge(RMSE_FCM_invitro, RMSE_FCM_insilico, by = "ID", all = TRUE)
+RMSE_FCM_12k$ID <- gsub("Mix", "Mock ", RMSE_FCM_12k$ID)
 
 
 # 5. Visualization ----
@@ -410,15 +440,7 @@ print(plot_cocult)
 
 
 mocks_12k_melted <- reshape2::melt(mocks_12k, id.vars = c("ID", "Technique"), variable.name = c("Strain"), value.name = c("Relative_abundance"))
-mocks_12k_melted$ID <- gsub("Mix1", "Mock 1", mocks_12k_melted$ID)
-mocks_12k_melted$ID <- gsub("Mix2", "Mock 2", mocks_12k_melted$ID)
-mocks_12k_melted$ID <- gsub("Mix3", "Mock 3", mocks_12k_melted$ID)
-mocks_12k_melted$ID <- gsub("Mix4", "Mock 4", mocks_12k_melted$ID)
-mocks_12k_melted$ID <- gsub("Mix5", "Mock 5", mocks_12k_melted$ID)
-mocks_12k_melted$ID <- gsub("Mix6", "Mock 6", mocks_12k_melted$ID)
-mocks_12k_melted$ID <- gsub("Mix7", "Mock 7", mocks_12k_melted$ID)
-mocks_12k_melted$ID <- gsub("Mix8", "Mock 8", mocks_12k_melted$ID)
-mocks_12k_melted$ID <- gsub("Mix9", "Mock 9", mocks_12k_melted$ID)
+mocks_12k_melted$ID <- gsub("Mix", "Mock ", mocks_12k_melted$ID)
 mocks_12k_melted$Technique <- gsub("Theoretical", "Actual", mocks_12k_melted$Technique)
 mocks_12k_melted$Relative_abundance <- mocks_12k_melted$Relative_abundance*100
 
@@ -444,6 +466,7 @@ print(plot_mocks_12k)
 
 mocks_12k_2_melted <- reshape2::melt(mocks_12k_2, id.vars = c("ID", "Technique"), variable.name = c("Strain"), value.name = c("Relative_abundance"))
 mocks_12k_2_melted$Technique <- gsub("Theoretical", "Actual", mocks_12k_2_melted$Technique)
+mocks_12k_2_melted$Relative_abundance <- mocks_12k_2_melted$Relative_abundance*100
 
 plot_mocks_12k_2 <- ggplot(data = mocks_12k_2_melted, aes(x = Technique, y = Relative_abundance, fill = Strain)) +
   geom_bar(position = "stack", stat = "identity", color = "black") +
@@ -484,11 +507,7 @@ colnames(theoretical_mocks2)[colnames(theoretical_mocks2) == "Mix_ID"] <- "ID"
 theoretical_mocks2 <- theoretical_mocks2[, colSums(theoretical_mocks2 != 0) > 0]
 
 absolute_mocks <- dplyr::bind_rows(FCM_mocks, qPCR_mocks_means, theoretical_mocks2)
-absolute_mocks$ID <- gsub("Mix1", "Mock 1", absolute_mocks$ID)
-absolute_mocks$ID <- gsub("Mix2", "Mock 2", absolute_mocks$ID)
-absolute_mocks$ID <- gsub("Mix3", "Mock 3", absolute_mocks$ID)
-absolute_mocks$ID <- gsub("Mix8", "Mock 8", absolute_mocks$ID)
-absolute_mocks$ID <- gsub("Mix9", "Mock 9", absolute_mocks$ID)
+absolute_mocks$ID <- gsub("Mix", "Mock ", absolute_mocks$ID)
 absolute_mocks_melted <- reshape2::melt(absolute_mocks, id.vars = c("ID", "Technique"), variable.name = c("Strain"), value.name = c("Concentration"))
 
 plot_mocks_absolute <- ggplot(data = absolute_mocks_melted, aes(x = Technique, y = Concentration, fill = Strain))+
@@ -658,6 +677,7 @@ print(plot_cocult_absolute_Pg)
 
 
 ## 5.3. RMSE relative abundance ----
+# RMSE 50k cells
 RMSE_melted <- reshape2::melt(RMSE, id.vars = c("ID"), variable.name = c("Technique"), value.name = c("RMSE"))
 
 plot_RMSE <- ggplot(data = RMSE_melted, aes(x = ID, y = RMSE, color = Technique)) +
@@ -670,3 +690,15 @@ plot_RMSE <- ggplot(data = RMSE_melted, aes(x = ID, y = RMSE, color = Technique)
         axis.title.x = element_blank()) +
   scale_x_discrete(labels = c("Mix1" = "Mock 1", "Mix2" = "Mock 2", "Mix3" = "Mock 3", "Mix8" = "Mock 8", "Mix9" = "Mock 9"))
 print(plot_RMSE)
+
+# RMSE FCM 12k cells
+RMSE_FCM_12k_melted <- reshape2::melt(RMSE_FCM_12k, id.vars = c("ID"), variable.name = c("Technique"), value.name = c("RMSE"))
+
+plot_RMSE_FCM_12k <- ggplot(data = RMSE_FCM_12k_melted, aes(x = ID, y = RMSE, color = Technique)) +
+  geom_point(size = 7, alpha = 0.6) +
+  labs(x = "Mock", y = "RMSE", color = NULL) +
+  scale_color_manual(values = c("RMSE_invitro"= "darkred", "RMSE_insilico" = "blue3"),
+                     labels = c("RMSE_invitro"= expression(paste("FCM - ", italic("In vitro"))), "RMSE_insilico" = expression(paste("FCM - ", italic("In silico"))))) +
+  paper_theme_fab +
+  theme(axis.title.x = element_blank())
+print(plot_RMSE_FCM_12k)
