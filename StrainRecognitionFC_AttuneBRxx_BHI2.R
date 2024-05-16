@@ -225,6 +225,15 @@ p_gating <- xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed_BHI, filter = po
                    axis = axis.default, nbin = 125, main = "Quality check gating cells BHI", xlab = "BL1-A", ylab = "BL3-A",
                    par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
 
+# Plot gating strategy cells
+p_gating_strat_cells <- xyplot(`BL3-A`~`BL1-A`, data = flowData_transformed_BHI[c(19, 21, 29, 115)], filter = polyGate1,
+                                  scales = list(y = list(limits = c(0, 14), cex = 1),
+                                                x = list(limits = c(5, 15), cex = 1)),
+                                  axis = axis.default, nbin = 125, main = NULL, xlab = list(label = "BL1-A (Green Fluorescence)", cex = 1.5), ylab = list(label = "BL3-A (Red Fluorescence)", cex = 1.5),
+                                  strip = strip.custom(factor.levels = c("Sterile BHI2", "0.2 µm filtered sample", "Sterile PBS", "Mock 7")),
+                                  par.strip.text = list(col = "white", font = 1, cex = 1.5), smooth = FALSE)
+print(p_gating_strat_cells)
+
 # Subset data
 flowData_transformed_BHI_gated <- Subset(flowData_transformed_BHI, polyGate1)
 
@@ -301,6 +310,15 @@ p_QC_singlets <- xyplot(`SSC-A`~`SSC-H`, data = flowData_transformed_BHI_gated, 
                                       x = list(limits = c(5, 15))),
                         axis = axis.default, nbin = 125, main = "Gating of singlets (axenic cultures)", xlab = "SSC-H", ylab = "SSC-A",
                         par.strip.text = list(col = "white", font = 1, cex = 1), smooth = FALSE)
+
+# Plot gating strategy singlets
+p_gating_strat_singlets <- xyplot(`SSC-A`~`SSC-H`, data = flowData_transformed_BHI_gated[c(23, 61, 115, 169)], filter = polyGateSinglets,
+                               scales = list(y = list(limits = c(6, 15), cex = 1),
+                                             x = list(limits = c(6, 15), cex = 1)),
+                               axis = axis.default, nbin = 125, main = NULL, xlab = list(label = "SSC-H", cex = 1.5), ylab = list(label = "SSC-A", cex = 1.5),
+                               strip = strip.custom(factor.levels = c(expression(italic("F. nucleatum")), expression(italic("S. oralis")), "Mock 7", "Co-culture 3A 48h")),
+                               par.strip.text = list(col = "white", font = 1, cex = 1.5), smooth = FALSE)
+print(p_gating_strat_singlets)
 
 flowData_transformed_BHI_singlets <- Subset(flowData_transformed_BHI_gated, polyGateSinglets)
 
@@ -411,35 +429,35 @@ p_singlets_cocult_percentage <- ggplot(data = singlets_cocult_mean, aes(x = Time
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5),
         legend.position = "bottom",
-        axis.text = element_text(size = 12),
-        axis.title.y = element_text(size = 16),
+        axis.text = element_text(size = 18),
+        axis.title.y = element_text(size = 22),
         axis.title.x = element_blank(),
         legend.title = element_blank(),
-        legend.text = element_text(size = 16),
-        strip.text = element_text(size = 14),
+        legend.text = element_text(size = 22),
+        strip.text = element_text(size = 18),
         legend.text.align = 0,
         panel.grid = element_blank()) +
   scale_y_continuous(limits = c(30, 90), breaks = seq(30, 90, by = 10))
 print(p_singlets_cocult_percentage)
 
 p_singlets_cocult_percentage2 <- ggplot(data = singlets_cocult_mean, aes(x = Timepoint, y = percentage, color = Replicate, group = Replicate)) +
-  geom_point(size = 7) +
-  geom_line(linewidth = 2) +
+  geom_point(size = 7, alpha = 0.6) +
+  geom_line(linewidth = 2, alpha = 0.5) +
   labs(y = "Relative abundance (%)", x = NULL) +
   facet_wrap(~ Strain, ncol = 3) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5),
         legend.position = "bottom",
-        axis.text = element_text(size = 12),
-        axis.title.y = element_text(size = 16),
+        axis.text = element_text(size = 18),
+        axis.title.y = element_text(size = 22),
         axis.title.x = element_blank(),
-        legend.title = element_text(size = 16),
-        legend.text = element_text(size = 16),
-        strip.text = element_text(size = 14),
+        legend.title = element_text(size = 24),
+        legend.text = element_text(size = 22),
+        strip.text = element_text(size = 18),
         legend.text.align = 0,
         panel.grid = element_blank()) +
   scale_y_continuous(limits = c(30, 90), breaks = seq(30, 90, by = 10)) +
-  scale_color_manual(values = c("A" = "darkred", "B" = "blue3", "C" = "#A3A500"))
+  scale_color_manual(values = c("A" = "#A3A500", "B" = "darkred", "C" = "blue3"))
 print(p_singlets_cocult_percentage2)
 
 
@@ -1631,7 +1649,8 @@ plot_accuracy_RF <- ggplot(data = accuracy_RF2, aes(x = NumberStrains, y = Accur
                      labels = c("RandomForest"= "Random Forest", "RandomGuessing" = "Random Guessing")) +
   paper_theme_fab +
   scale_y_continuous(limits = c(0, 100)) +
-  scale_x_continuous(limits = c(0, 14), breaks = seq(0, 14, by = 1))
+  scale_x_continuous(limits = c(2, 14), breaks = seq(2, 14, by = 1)) +
+  theme(legend.position = "none")
 print(plot_accuracy_RF)
 
 # Relative difference between actual accuracy and random guessing
@@ -1645,7 +1664,7 @@ plot_accuracy_RF_rel <- ggplot(data = accuracy_rel, aes(x = NumberStrains, y = i
   labs(x = "Number of strains", y = "Increase accuracy to random guessing (%)", color = NULL) +
   paper_theme_fab +
   scale_y_continuous(limits = c(0, 650), breaks = seq(0, 600, by = 100)) +
-  scale_x_continuous(limits = c(0, 14), breaks = seq(0, 14, by = 1))
+  scale_x_continuous(limits = c(2, 14), breaks = seq(2, 14, by = 1))
 print(plot_accuracy_RF_rel)
 
 plot_accuracy_RF_delta <- ggplot(data = accuracy_rel, aes(x = NumberStrains, y = deltaAcc))+
@@ -1653,9 +1672,15 @@ plot_accuracy_RF_delta <- ggplot(data = accuracy_rel, aes(x = NumberStrains, y =
   labs(x = "Number of strains", y = "Δ accuracy (%)", color = NULL) +
   paper_theme_fab +
   scale_y_continuous(limits = c(30, 60), breaks = seq(20, 60, by = 10)) +
-  scale_x_continuous(limits = c(0, 14), breaks = seq(0, 14, by = 1))
+  scale_x_continuous(limits = c(2, 14), breaks = seq(2, 14, by = 1))
 print(plot_accuracy_RF_delta)
 
+# Combined plot accuracy and relative increase accuracy to random guessing
+plot_accuracy_grid <- plot_grid(plot_accuracy_RF, plot_accuracy_RF_rel, labels = c("A", "B"), label_size = 34, hjust = -0.15, ncol = 2, nrow = 1)
+legend_accuracy <- get_legend(plot_accuracy_RF +
+                                theme(legend.position = "bottom"))
+plot_accuracy <- plot_grid(plot_accuracy_grid, legend_accuracy, nrow = 2, rel_heights = c(1, 0.05))
+print(plot_accuracy)
 
 ### 8.3.2. Performance of predictions ----
 # RMSE (root mean squared error) for predictions
@@ -2704,7 +2729,7 @@ plot_singlets_silico <- ggplot(data = singlets_mocks_silico_melted, aes(x = ID, 
   geom_point(size = 7, alpha = 0.6) +
   labs(x = "Mock", y = "Relatvie abundance (%)", color = NULL) +
   scale_color_manual(values = c("percentage_invitro" = "#A3A500", "percentage_insilico" = "darkred", "percentage_theoretical" = "blue3"),
-                     labels = c("percentage_invitro"= expression(paste("FCM - ", italic("In vitro"))), "percentage_insilico" = expression(paste("FCM - ", italic("In silico"))), "percentage_theoretical" = "Calculated")) +
+                     labels = c("percentage_invitro"= expression(paste("FCM - ", italic("In vitro"))), "percentage_insilico" = expression(paste("FCM - ", italic("In silico"))), "percentage_theoretical" = "Theoretical")) +
   paper_theme_fab +
   theme(axis.title.x = element_blank()) +
   scale_y_continuous(limits = c(50, 80), breaks = c(50, 60, 70, 80))
