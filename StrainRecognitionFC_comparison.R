@@ -17,10 +17,11 @@ library("RColorBrewer")
 #library("gridExtra")
 #library("grid")
 #library("scales")
-#library("cowplot")
+library("cowplot")
 library("reshape2")
 library("dplyr")
 library("tidyverse")
+library("ggpubr")
 
 seed <- 777
 set.seed(seed)
@@ -389,17 +390,37 @@ plot_mocks <- ggplot(data = all_data2_mocks, aes(x = Technique, y = Relative_abu
   labs(x = "Technique", y = "Relative abundance (%)") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5),
         legend.position = "bottom",
-        axis.text = element_text(size = 12),
-        axis.title.y = element_text(size = 16),
+        axis.text = element_text(size = 18),
+        axis.title.y = element_text(size = 22),
         axis.title.x = element_blank(),
         legend.title = element_blank(),
-        legend.text = element_text(size = 16),
-        strip.text = element_text(size = 14),
+        legend.text = element_text(size = 22),
+        strip.text = element_text(size = 18),
         legend.text.align = 0,
         panel.grid = element_blank()) +
   scale_fill_manual(values = c("Fn" = "#F8766D", "Pg" = "#A3A500", "So" = "#00BF7D", "Vp" = "#00B0F6", "Other" = "#E76BF3"),
                     labels = c("Fn" = expression(italic("F. nucleatum")), "Pg" = expression(italic("P. gingivalis")), "So" = expression(italic("S. oralis")), "Vp" = expression(italic("V. parvula")), "Other" = "Other")) +
-  scale_x_discrete(labels = c("Actual" = "Actual", "FCM_Model_SoFn" = "FCM SoFn", "FCM_Model_SoFnPg" = "FCM SoFnPg", "FCM_Model_SoFnPgVp" = "FCM SoFnPgVp", "Illumina" = "Illumina", "qPCR" = "qPCR"))
+  scale_x_discrete(labels = c("Actual" = "Theoretical", "FCM_Model_SoFn" = "FCM SoFn", "FCM_Model_SoFnPg" = "FCM SoFnPg", "FCM_Model_SoFnPgVp" = "FCM SoFnPgVp", "Illumina" = "Illumina", "qPCR" = "qPCR"))
+print(plot_mocks)
+
+plot_mocks <- ggplot(data = all_data2_mocks, aes(x = Technique, y = Relative_abundance, fill = Strain)) +
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  facet_wrap(~ ID, nrow = length(unique(ID))) +
+  theme_bw() +
+  labs(x = "Technique", y = "Relative abundance (%)") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5),
+        legend.position = "bottom",
+        axis.text = element_text(size = 18),
+        axis.title.y = element_text(size = 22),
+        axis.title.x = element_blank(),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 22),
+        strip.text = element_text(size = 18),
+        legend.text.align = 0,
+        panel.grid = element_blank()) +
+  scale_fill_manual(values = c("Fn" = "#F8766D", "Pg" = "#E38900", "So" = "#C49A00", "Vp" = "#99A800", "Other" = "#E76BF3"),
+                    labels = c("Fn" = expression(italic("F. nucleatum")), "Pg" = expression(italic("P. gingivalis")), "So" = expression(italic("S. oralis")), "Vp" = expression(italic("V. parvula")), "Other" = "Other")) +
+  scale_x_discrete(labels = c("Actual" = "Theoretical", "FCM_Model_SoFn" = "FCM SoFn", "FCM_Model_SoFnPg" = "FCM SoFnPg", "FCM_Model_SoFnPgVp" = "FCM SoFnPgVp", "Illumina" = "Illumina", "qPCR" = "qPCR"))
 print(plot_mocks)
 
 all_data2_cocult <- subset(all_data2_copycorrected_melted, Type == "Co-culture")
@@ -425,15 +446,15 @@ plot_cocult <- ggplot(data = all_data2_cocult, aes(x = Technique, y = Relative_a
   labs(x = "Technique", y = "Relative abundance (%)") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5),
         legend.position = "bottom",
-        axis.text = element_text(size = 12),
-        axis.title.y = element_text(size = 16),
+        axis.text = element_text(size = 18),
+        axis.title.y = element_text(size = 22),
         axis.title.x = element_blank(),
         legend.title = element_blank(),
-        legend.text = element_text(size = 16),
-        strip.text = element_text(size = 14),
+        legend.text = element_text(size = 22),
+        strip.text = element_text(size = 18),
         legend.text.align = 0,
         panel.grid = element_blank()) +
-  scale_fill_manual(values = c("Fn" = "#F8766D", "Pg" = "#A3A500", "So" = "#00BF7D", "Vp" = "#00B0F6", "Other" = "#E76BF3"),
+  scale_fill_manual(values = c("Fn" = "#F8766D", "Pg" = "#E38900", "So" = "#C49A00", "Vp" = "#99A800", "Other" = "#E76BF3"),
                     labels = c("Fn" = expression(italic("F. nucleatum")), "Pg" = expression(italic("P. gingivalis")), "So" = expression(italic("S. oralis")), "Vp" = expression(italic("V. parvula")), "Other" = "Other")) +
   scale_x_discrete(labels = c("FCM_Model_SoFn" = "FCM SoFn", "FCM_Model_SoFnPg" = "FCM SoFnPg", "FCM_Model_SoFnPgVp" = "FCM SoFnPgVp", "Illumina" = "Illumina", "qPCR" = "qPCR"))
 print(plot_cocult)
@@ -475,17 +496,17 @@ plot_mocks_12k_2 <- ggplot(data = mocks_12k_2_melted, aes(x = Technique, y = Rel
   labs(x = "Technique", y = "Relative abundance (%)") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5),
         legend.position = "bottom",
-        axis.text = element_text(size = 12),
-        axis.title.y = element_text(size = 16),
+        axis.text = element_text(size = 18),
+        axis.title.y = element_text(size = 22),
         axis.title.x = element_blank(),
         legend.title = element_blank(),
-        legend.text = element_text(size = 16),
-        strip.text = element_text(size = 14),
+        legend.text = element_text(size = 22),
+        strip.text = element_text(size = 18),
         legend.text.align = 0,
         panel.grid = element_blank()) +
   scale_fill_manual(values = c("Fn" = "#F8766D", "Pg" = "#E38900", "So" = "#C49A00", "Vp" = "#99A800", "An" = "#53B400", "Av" = "#00BC56", "Aa" = "#00C094", "Sg" = "#00BFC4", "Smi" = "#00B6EB", "Smu" = "#06A4FF", "Pi" = "#A58AFF", "Ssal" = "#DF70F8", "Ssan" = "#FB61D7", "Ssob" = "#FF66A8"),
                     labels = c("Fn" = expression(italic("F. nucleatum")), "Pg" = expression(italic("P. gingivalis")), "So" = expression(italic("S. oralis")), "Vp" = expression(italic("V. parvula")), "An" = expression(italic("A. naeslundii")), "Av" = expression(italic("A. viscosus")), "Aa" = expression(italic("A. actinomycetemcomitans")), "Sg" = expression(italic("S. gordonii")), "Smi" = expression(italic("S. mitis")), "Smu" = expression(italic("S. mutans")), "Pi" = expression(italic("P. intermedia")), "Ssal" = expression(italic("S. salivarius")), "Ssan" = expression(italic("S. sanguinis")), "Ssob" = expression(italic("S. sobrinus")))) +
-  scale_x_discrete(labels = c("Actual" = "Actual", "FCM - In vitro" = expression(paste("FCM - ", italic("In vitro"))), "FCM - In silico" = expression(paste("FCM - ", italic("In silico")))))
+  scale_x_discrete(labels = c("Actual" = "Theoretical", "FCM - In vitro" = expression(paste("FCM - ", italic("In vitro"))), "FCM - In silico" = expression(paste("FCM - ", italic("In silico")))))
 print(plot_mocks_12k_2)
 
 
@@ -516,18 +537,19 @@ plot_mocks_absolute <- ggplot(data = absolute_mocks_melted, aes(x = Technique, y
   theme_bw() +
   labs(x = "Technique", y = "Concentration (cells/mL)") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5),
-        legend.position = "bottom",
-        axis.text = element_text(size = 12),
-        axis.title.y = element_text(size = 16),
+        legend.position = "none",
+        axis.text = element_text(size = 18),
+        axis.title.y = element_text(size = 22),
         axis.title.x = element_blank(),
         legend.title = element_blank(),
-        legend.text = element_text(size = 16),
-        strip.text = element_text(size = 14),
+        legend.text = element_text(size = 22),
+        strip.text = element_text(size = 18),
         legend.text.align = 0,
         panel.grid = element_blank()) +
-  scale_fill_manual(values = c("Fn" = "#F8766D", "Pg" = "#A3A500", "So" = "#00BF7D", "Vp" = "#00B0F6"),
+  scale_fill_manual(values = c("Fn" = "#F8766D", "Pg" = "#E38900", "So" = "#C49A00", "Vp" = "#99A800"),
                     labels = c("Fn" = expression(italic("F. nucleatum")), "Pg" = expression(italic("P. gingivalis")), "So" = expression(italic("S. oralis")), "Vp" = expression(italic("V. parvula")))) +
-  scale_y_continuous(breaks = c(0, 100000000, 500000000, 1000000000, 2000000000, 3000000000, 4000000000, 5000000000, 6000000000))
+  scale_y_continuous(breaks = c(0, 500000000, 1000000000, 2000000000, 3000000000, 4000000000, 5000000000, 6000000000)) +
+  scale_x_discrete(labels = c("Actual" = "Theoretical", "FCM" = "FCM", "qPCR" = "qPCR"))
 print(plot_mocks_absolute)
 
 absolute_mocks_FCM <- absolute_mocks_melted[absolute_mocks_melted$Technique == "FCM" | absolute_mocks_melted$Technique == "Actual", ]
@@ -540,19 +562,26 @@ plot_mocks_absolute_FCM <- ggplot(data = absolute_mocks_FCM, aes(x = Technique, 
   theme_bw() +
   labs(x = "Technique", y = "Concentration (cells/mL)") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5),
-        legend.position = "bottom",
-        axis.text = element_text(size = 12),
-        axis.title.y = element_text(size = 16),
+        legend.position = "none",
+        axis.text = element_text(size = 18),
+        axis.title.y = element_text(size = 22),
         axis.title.x = element_blank(),
         legend.title = element_blank(),
-        legend.text = element_text(size = 16),
-        strip.text = element_text(size = 14),
+        legend.text = element_text(size = 22),
+        strip.text = element_text(size = 18),
         legend.text.align = 0,
         panel.grid = element_blank()) +
-  scale_fill_manual(values = c("Fn" = "#F8766D", "Pg" = "#A3A500", "So" = "#00BF7D", "Vp" = "#00B0F6"),
+  scale_fill_manual(values = c("Fn" = "#F8766D", "Pg" = "#E38900", "So" = "#C49A00", "Vp" = "#99A800"),
                     labels = c("Fn" = expression(italic("F. nucleatum")), "Pg" = expression(italic("P. gingivalis")), "So" = expression(italic("S. oralis")), "Vp" = expression(italic("V. parvula")))) +
-  scale_y_continuous(breaks = seq(0, 300000000, by = 50000000))
+  scale_y_continuous(breaks = seq(0, 300000000, by = 50000000)) +
+  scale_x_discrete(labels = c("Calculated" = "Theoretical", "Predicted FCM" = "FCM"))
 print(plot_mocks_absolute_FCM)
+
+plot_mocks_absolute_grid <- plot_grid(plot_mocks_absolute, plot_mocks_absolute_FCM, labels = c("A", "B"), label_size = 34, hjust = -0.15, ncol = 2, nrow = 1)
+legend_absolute_mocks <- get_legend(plot_mocks_absolute +
+                                      theme(legend.position = "bottom"))
+plot_mocks_absolute_combined <- plot_grid(plot_mocks_absolute_grid, legend_absolute_mocks, nrow = 2, rel_heights = c(1, 0.05))
+print(plot_mocks_absolute_combined)
 
 
 ### 5.2.2. Co-cultures ----
@@ -604,16 +633,16 @@ plot_cocult_absolute <- ggplot(data = absolute_cocult_melted, aes(x = Technique,
   theme_bw() +
   labs(x = "Technique", y = "Concentration (cells/mL)") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5),
-        legend.position = "bottom",
-        axis.text = element_text(size = 12),
-        axis.title.y = element_text(size = 16),
+        legend.position = "none",
+        axis.text = element_text(size = 18),
+        axis.title.y = element_text(size = 22),
         axis.title.x = element_blank(),
         legend.title = element_blank(),
-        legend.text = element_text(size = 16),
-        strip.text = element_text(size = 14),
+        legend.text = element_text(size = 22),
+        strip.text = element_text(size = 18),
         legend.text.align = 0,
         panel.grid = element_blank()) +
-  scale_fill_manual(values = c("Fn" = "#F8766D", "Pg" = "#A3A500", "So" = "#00BF7D", "Vp" = "#00B0F6"),
+  scale_fill_manual(values = c("Fn" = "#F8766D", "Pg" = "#E38900", "So" = "#C49A00", "Vp" = "#99A800"),
                     labels = c("Fn" = expression(italic("F. nucleatum")), "Pg" = expression(italic("P. gingivalis")), "So" = expression(italic("S. oralis")), "Vp" = expression(italic("V. parvula")))) +
   scale_y_continuous(breaks = c(0, 500000000, 1000000000, 2000000000, 3000000000, 4000000000, 5000000000, 6000000000))
 print(plot_cocult_absolute)
@@ -622,9 +651,9 @@ print(plot_cocult_absolute)
 absolute_cocult_FCM <- absolute_cocult_melted[absolute_cocult_melted$Technique == "FCM", ]
 absolute_cocult_FCM$Timepoint <- as.factor(substr(as.character(absolute_cocult_FCM$ID), start = nchar(as.character(absolute_cocult_FCM$ID))-2, stop = nchar(as.character(absolute_cocult_FCM$ID))))
 absolute_cocult_FCM$ID <- as.factor(substr(as.character(absolute_cocult_FCM$ID), start = 1, stop = nchar(as.character(absolute_cocult_FCM$ID))-4))
-absolute_cocult_FCM$ID <- gsub("Co1_", "Co-culture 1 ", absolute_cocult_FCM$ID)
-absolute_cocult_FCM$ID <- gsub("Co2_", "Co-culture 2 ", absolute_cocult_FCM$ID)
-absolute_cocult_FCM$ID <- gsub("Co3_", "Co-culture 3 ", absolute_cocult_FCM$ID)
+absolute_cocult_FCM$ID <- gsub("Co1_", "Co-culture 1", absolute_cocult_FCM$ID)
+absolute_cocult_FCM$ID <- gsub("Co2_", "Co-culture 2", absolute_cocult_FCM$ID)
+absolute_cocult_FCM$ID <- gsub("Co3_", "Co-culture 3", absolute_cocult_FCM$ID)
 
 plot_cocult_absolute_FCM <- ggplot(data = absolute_cocult_FCM, aes(x = Timepoint, y = Concentration, fill = Strain)) +
   geom_bar(position = "stack", stat = "identity", color = "black") +
@@ -632,19 +661,60 @@ plot_cocult_absolute_FCM <- ggplot(data = absolute_cocult_FCM, aes(x = Timepoint
   theme_bw() +
   labs(x = "Timepoint", y = "Concentration (cells/mL)") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5),
-        legend.position = "bottom",
-        axis.text = element_text(size = 12),
-        axis.title.y = element_text(size = 16),
+        legend.position = "none",
+        axis.text = element_text(size = 18),
+        axis.title.y = element_text(size = 22),
         axis.title.x = element_blank(),
         legend.title = element_blank(),
-        legend.text = element_text(size = 16),
-        strip.text = element_text(size = 14),
+        legend.text = element_text(size = 22),
+        strip.text = element_text(size = 18),
         legend.text.align = 0,
         panel.grid = element_blank()) +
-  scale_fill_manual(values = c("Fn" = "#F8766D", "Pg" = "#A3A500", "So" = "#00BF7D", "Vp" = "#00B0F6"),
+  scale_fill_manual(values = c("Fn" = "#F8766D", "Pg" = "#E38900", "So" = "#C49A00", "Vp" = "#99A800"),
                     labels = c("Fn" = expression(italic("F. nucleatum")), "Pg" = expression(italic("P. gingivalis")), "So" = expression(italic("S. oralis")), "Vp" = expression(italic("V. parvula")))) +
   scale_y_continuous(breaks = seq(0, 500000000, by = 100000000))
 print(plot_cocult_absolute_FCM)
+
+# qPCR only --> look at growth (cell numbers)
+absolute_cocult_qPCR <- absolute_cocult_melted[absolute_cocult_melted$Technique == "qPCR", ]
+absolute_cocult_qPCR$Timepoint <- as.factor(substr(as.character(absolute_cocult_qPCR$ID), start = nchar(as.character(absolute_cocult_qPCR$ID))-2, stop = nchar(as.character(absolute_cocult_qPCR$ID))))
+absolute_cocult_qPCR$ID <- as.factor(substr(as.character(absolute_cocult_qPCR$ID), start = 1, stop = nchar(as.character(absolute_cocult_qPCR$ID))-4))
+absolute_cocult_qPCR$ID <- gsub("Co1_", "Co-culture 1", absolute_cocult_qPCR$ID)
+absolute_cocult_qPCR$ID <- gsub("Co2_", "Co-culture 2", absolute_cocult_qPCR$ID)
+absolute_cocult_qPCR$ID <- gsub("Co3_", "Co-culture 3", absolute_cocult_qPCR$ID)
+
+plot_cocult_absolute_qPCR <- ggplot(data = absolute_cocult_qPCR, aes(x = Timepoint, y = Concentration, fill = Strain)) +
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  facet_wrap(~ ID, ncol = 3) +
+  theme_bw() +
+  labs(x = "Timepoint", y = "Concentration (cells/mL)") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5),
+        legend.position = "none",
+        axis.text = element_text(size = 18),
+        axis.title.y = element_text(size = 22),
+        axis.title.x = element_blank(),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 22),
+        strip.text = element_text(size = 18),
+        legend.text.align = 0,
+        panel.grid = element_blank()) +
+  scale_fill_manual(values = c("Fn" = "#F8766D", "Pg" = "#E38900", "So" = "#C49A00", "Vp" = "#99A800"),
+                    labels = c("Fn" = expression(italic("F. nucleatum")), "Pg" = expression(italic("P. gingivalis")), "So" = expression(italic("S. oralis")), "Vp" = expression(italic("V. parvula")))) +
+  scale_y_continuous(breaks = seq(0, 6000000000, by = 1000000000))
+print(plot_cocult_absolute_qPCR)
+
+# Combined plot co-cultures
+plot_cocult_absolute_grid <- plot_grid(plot_cocult_absolute, plot_cocult_absolute_FCM, labels = c("A", "B"), label_size = 34, hjust = -0.15, ncol = 2, nrow = 1, rel_widths = c(1, 0.6))
+legend_absolute_cocult <- get_legend(plot_cocult_absolute +
+                                      theme(legend.position = "bottom"))
+plot_cocult_absolute_combined <- plot_grid(plot_cocult_absolute_grid, legend_absolute_cocult, nrow = 2, rel_heights = c(1, 0.05))
+print(plot_cocult_absolute_combined)
+
+plot_cocult_absolute_grid2 <- plot_grid(plot_cocult_absolute_qPCR, plot_cocult_absolute_FCM, labels = c("A", "B"), label_size = 34, hjust = -0.15, ncol = 2, nrow = 1)
+legend_absolute_cocult2 <- get_legend(plot_cocult_absolute_qPCR +
+                                       theme(legend.position = "bottom"))
+plot_cocult_absolute_combined2 <- plot_grid(plot_cocult_absolute_grid2, legend_absolute_cocult2, nrow = 2, rel_heights = c(1, 0.05))
+print(plot_cocult_absolute_combined2)
 
 # qPCR for Pg --> might there be some necrotrophy happening?
 qPCR_cocult_Pg <- qPCR_cocult_means[, c(1, 4)]
@@ -686,9 +756,12 @@ plot_RMSE <- ggplot(data = RMSE_melted, aes(x = ID, y = RMSE, color = Technique)
   scale_color_manual(values = c("RMSE_SoFn"= "#FF6C00", "RMSE_SoFnPg"= "darkred", "RMSE_SoFnPgVp" = "red3", "RMSE_qPCR" = "blue3", "RMSE_illumina" = "#008080"),
                      labels = c("RMSE_SoFn"= "FCM SoFn", "RMSE_SoFnPg"= "FCM SoFnPg", "RMSE_SoFnPgVp" = "FCM SoFnPgVp", "RMSE_qPCR" = "qPCR", "RMSE_illumina" = "Illumina")) +
   paper_theme_fab +
-  theme(legend.position = "right",
-        axis.title.x = element_blank()) +
-  scale_x_discrete(labels = c("Mix1" = "Mock 1", "Mix2" = "Mock 2", "Mix3" = "Mock 3", "Mix8" = "Mock 8", "Mix9" = "Mock 9"))
+  theme(axis.title.x = element_blank(),
+        legend.title = element_blank(),
+        axis.text.x = element_text(angle = 90, vjust = 0.5),
+        legend.text.align = 0) +
+  scale_x_discrete(labels = c("Mix1" = "Mock 1", "Mix2" = "Mock 2", "Mix3" = "Mock 3", "Mix8" = "Mock 8", "Mix9" = "Mock 9")) +
+  guides(color = guide_legend(nrow = 3))
 print(plot_RMSE)
 
 # RMSE FCM 12k cells
@@ -700,5 +773,129 @@ plot_RMSE_FCM_12k <- ggplot(data = RMSE_FCM_12k_melted, aes(x = ID, y = RMSE, co
   scale_color_manual(values = c("RMSE_invitro"= "darkred", "RMSE_insilico" = "blue3"),
                      labels = c("RMSE_invitro"= expression(paste("FCM - ", italic("In vitro"))), "RMSE_insilico" = expression(paste("FCM - ", italic("In silico"))))) +
   paper_theme_fab +
-  theme(axis.title.x = element_blank())
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_text(angle = 90, vjust = 0.5),
+        legend.text.align = 0) +
+  guides(color = guide_legend(nrow = 2))
 print(plot_RMSE_FCM_12k)
+
+# Combined figure rel abundance and RMSE FCM 12k cells
+plot_FCM_12k_grid <- plot_grid(plot_mocks_12k_2, plot_RMSE_FCM_12k, labels = c("A", "B"), label_size = 34, hjust = -0.15, ncol = 2, nrow = 1, rel_widths =c(1, 0.42))
+print(plot_FCM_12k_grid)
+
+# Combined figure rel abundance and RMSE 50k cells
+plot_50k_grid <- plot_grid(plot_mocks, plot_RMSE, labels = c("A", "B"), label_size = 34, hjust = -0.15, ncol = 2, nrow = 1, rel_widths =c(1, 0.6))
+print(plot_50k_grid)
+
+
+# 6. Statistical analysis cell concentrations co-cultures ----
+
+## 6.1. qPCR ----
+total_concentration_qPCR_cocult <- aggregate(Concentration ~ ID + Timepoint, data = absolute_cocult_qPCR, FUN = sum)
+total_concentration_qPCR_cocult$ID <- substr(total_concentration_qPCR_cocult$ID, 1, nchar(total_concentration_qPCR_cocult$ID)-1)
+
+# REMARK: smallest possible p-value in Wilcox test with 3 replicates is 0.1 --> do not use Wilcox test!
+sample_names_cocult <- unique(total_concentration_qPCR_cocult$ID)
+wilcox_qPCR_cocult <- lapply(sample_names_cocult, function(sample_name) {
+  df_sample <- total_concentration_qPCR_cocult[total_concentration_qPCR_cocult$ID == sample_name, ]
+  test_result <- wilcox.test(Concentration ~ Timepoint, data = df_sample, paired = TRUE, alternative = "two.sided")
+  return(test_result)
+})
+
+sample_names_cocult <- unique(total_concentration_qPCR_cocult$ID)
+ttest_qPCR_cocult <- lapply(sample_names_cocult, function(sample_name) {
+  df_sample <- total_concentration_qPCR_cocult[total_concentration_qPCR_cocult$ID == sample_name, ]
+  test_result <- t.test(Concentration ~ Timepoint, data = df_sample, paired = TRUE, alternative = "two.sided")
+  return(test_result)
+})
+
+stat_qPCR_cocult_1 <- total_concentration_qPCR_cocult[total_concentration_qPCR_cocult$ID == "Co-culture 1", ]
+stat_qPCR_cocult_1$ID <- rep(c("A", "B", "C"), 2)
+stat_qPCR_cocult_1 <- pivot_wider(stat_qPCR_cocult_1, names_from = Timepoint, values_from = Concentration)
+colnames(stat_qPCR_cocult_1) <- c("ID", "h24", "h48")
+stat_qPCR_cocult_1$diff <- stat_qPCR_cocult_1$h48-stat_qPCR_cocult_1$h24
+
+shapiro_qPCR_cocult_1 <- shapiro.test(stat_qPCR_cocult_1$diff)
+ggqqplot(stat_qPCR_cocult_1$diff)
+ggdensity(stat_qPCR_cocult_1$diff,
+          main = "Density plot of cell concentration",
+          xlab = "Difference in concentration")
+
+stat_qPCR_cocult_2 <- total_concentration_qPCR_cocult[total_concentration_qPCR_cocult$ID == "Co-culture 2", ]
+stat_qPCR_cocult_2$ID <- rep(c("A", "B", "C"), 2)
+stat_qPCR_cocult_2 <- pivot_wider(stat_qPCR_cocult_2, names_from = Timepoint, values_from = Concentration)
+colnames(stat_qPCR_cocult_2) <- c("ID", "h24", "h48")
+stat_qPCR_cocult_2$diff <- stat_qPCR_cocult_2$h48-stat_qPCR_cocult_2$h24
+
+shapiro_qPCR_cocult_2 <- shapiro.test(stat_qPCR_cocult_2$diff)
+ggqqplot(stat_qPCR_cocult_2$diff)
+ggdensity(stat_qPCR_cocult_2$diff,
+          main = "Density plot of cell concentration",
+          xlab = "Difference in concentration")
+
+stat_qPCR_cocult_3 <- total_concentration_qPCR_cocult[total_concentration_qPCR_cocult$ID == "Co-culture 3", ]
+stat_qPCR_cocult_3$ID <- rep(c("A", "B", "C"), 2)
+stat_qPCR_cocult_3 <- pivot_wider(stat_qPCR_cocult_3, names_from = Timepoint, values_from = Concentration)
+colnames(stat_qPCR_cocult_3) <- c("ID", "h24", "h48")
+stat_qPCR_cocult_3$diff <- stat_qPCR_cocult_3$h48-stat_qPCR_cocult_3$h24
+
+shapiro_qPCR_cocult_3 <- shapiro.test(stat_qPCR_cocult_3$diff)
+ggqqplot(stat_qPCR_cocult_3$diff)
+ggdensity(stat_qPCR_cocult_3$diff,
+          main = "Density plot of cell concentration",
+          xlab = "Difference in concentration")
+
+## 6.2. FCM ----
+total_concentration_FCM_cocult <- aggregate(Concentration ~ ID + Timepoint, data = absolute_cocult_FCM, FUN = sum)
+total_concentration_FCM_cocult$ID <- substr(total_concentration_FCM_cocult$ID, 1, nchar(total_concentration_FCM_cocult$ID)-1)
+
+# REMARK: smallest possible p-value in Wilcox test with 3 replicates is 0.1 --> do not use Wilcox test!
+sample_names_cocult <- unique(total_concentration_FCM_cocult$ID)
+wilcox_FCM_cocult <- lapply(sample_names_cocult, function(sample_name) {
+  df_sample <- total_concentration_FCM_cocult[total_concentration_FCM_cocult$ID == sample_name, ]
+  test_result <- wilcox.test(Concentration ~ Timepoint, data = df_sample, paired = TRUE, alternative = "two.sided")
+  return(test_result)
+})
+
+sample_names_cocult <- unique(total_concentration_FCM_cocult$ID)
+ttest_FCM_cocult <- lapply(sample_names_cocult, function(sample_name) {
+  df_sample <- total_concentration_FCM_cocult[total_concentration_FCM_cocult$ID == sample_name, ]
+  test_result <- t.test(Concentration ~ Timepoint, data = df_sample, paired = TRUE, alternative = "two.sided")
+  return(test_result)
+})
+
+stat_FCM_cocult_1 <- total_concentration_FCM_cocult[total_concentration_FCM_cocult$ID == "Co-culture 1", ]
+stat_FCM_cocult_1$ID <- rep(c("A", "B", "C"), 2)
+stat_FCM_cocult_1 <- pivot_wider(stat_FCM_cocult_1, names_from = Timepoint, values_from = Concentration)
+colnames(stat_FCM_cocult_1) <- c("ID", "h24", "h48")
+stat_FCM_cocult_1$diff <- stat_FCM_cocult_1$h48-stat_FCM_cocult_1$h24
+
+shapiro_FCM_cocult_1 <- shapiro.test(stat_FCM_cocult_1$diff)
+ggqqplot(stat_FCM_cocult_1$diff)
+ggdensity(stat_FCM_cocult_1$diff,
+          main = "Density plot of cell concentration",
+          xlab = "Difference in concentration")
+
+stat_FCM_cocult_2 <- total_concentration_FCM_cocult[total_concentration_FCM_cocult$ID == "Co-culture 2", ]
+stat_FCM_cocult_2$ID <- rep(c("A", "B", "C"), 2)
+stat_FCM_cocult_2 <- pivot_wider(stat_FCM_cocult_2, names_from = Timepoint, values_from = Concentration)
+colnames(stat_FCM_cocult_2) <- c("ID", "h24", "h48")
+stat_FCM_cocult_2$diff <- stat_FCM_cocult_2$h48-stat_FCM_cocult_2$h24
+
+shapiro_FCM_cocult_2 <- shapiro.test(stat_FCM_cocult_2$diff)
+ggqqplot(stat_FCM_cocult_2$diff)
+ggdensity(stat_FCM_cocult_2$diff,
+          main = "Density plot of cell concentration",
+          xlab = "Difference in concentration")
+
+stat_FCM_cocult_3 <- total_concentration_FCM_cocult[total_concentration_FCM_cocult$ID == "Co-culture 3", ]
+stat_FCM_cocult_3$ID <- rep(c("A", "B", "C"), 2)
+stat_FCM_cocult_3 <- pivot_wider(stat_FCM_cocult_3, names_from = Timepoint, values_from = Concentration)
+colnames(stat_FCM_cocult_3) <- c("ID", "h24", "h48")
+stat_FCM_cocult_3$diff <- stat_FCM_cocult_3$h48-stat_FCM_cocult_3$h24
+
+shapiro_FCM_cocult_3 <- shapiro.test(stat_FCM_cocult_3$diff)
+ggqqplot(stat_FCM_cocult_3$diff)
+ggdensity(stat_FCM_cocult_3$diff,
+          main = "Density plot of cell concentration",
+          xlab = "Difference in concentration")
