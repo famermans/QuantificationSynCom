@@ -57,7 +57,7 @@ plot_nj_tree <- ggtree(nj_tree, layout = "roundrect", linewidth = 0.8) +
   theme_tree()
 print(plot_nj_tree)
 
-plplot_ml_tree <- ggtree(ml_tree) +
+plot_ml_tree <- ggtree(ml_tree) +
   geom_tiplab() +
   theme_tree()
 print(plot_ml_tree)
@@ -121,6 +121,55 @@ plot_mean_dist_mocks <- ggplot(data = mean_distance_mocks, aes(x = mock, y = mea
   scale_x_discrete(labels = c("Mock 1" = "Mock 1/\nCo-culture 1", "Mock 2" = "Mock 2/\nCo-culture 2", "Mock 3" = "Mock 3/\nCo-culture 3", "Mock 4" = "Mock 4", "Mock 5" = "Mock 5", "Mock 6" = "Mock 6", "Mock 7" = "Mock 7", "Mock 8" = "Mock 8", "Mock 9" = "Mock 9"))
 print(plot_mean_dist_mocks)
 
+# Create boxplot
+distance_m1_flat <- unlist(distance_m1)
+distance_m1_flat <- distance_m1_flat[!is.na(distance_m1_flat)]
+distance_m1_flat <- unname(distance_m1_flat)
+
+distance_m2_flat <- unlist(distance_m2)
+distance_m2_flat <- distance_m2_flat[!is.na(distance_m2_flat)]
+distance_m2_flat <- unname(distance_m2_flat)
+
+distance_m3_flat <- unlist(distance_m3)
+distance_m3_flat <- distance_m3_flat[!is.na(distance_m3_flat)]
+distance_m3_flat <- unname(distance_m3_flat)
+
+distance_m4_flat <- unlist(distance_m4)
+distance_m4_flat <- distance_m4_flat[!is.na(distance_m4_flat)]
+distance_m4_flat <- unname(distance_m4_flat)
+
+distance_m5_flat <- unlist(distance_m5)
+distance_m5_flat <- distance_m5_flat[!is.na(distance_m5_flat)]
+distance_m5_flat <- unname(distance_m5_flat)
+
+distance_m6_flat <- unlist(distance_m6)
+distance_m6_flat <- distance_m6_flat[!is.na(distance_m6_flat)]
+distance_m6_flat <- unname(distance_m6_flat)
+
+distance_m7_flat <- unlist(distance_m7)
+distance_m7_flat <- distance_m7_flat[!is.na(distance_m7_flat)]
+distance_m7_flat <- unname(distance_m7_flat)
+
+distance_box <- data.frame(mock = c(rep("Mock 1", length(distance_m1_flat)),
+                                    rep("Mock 2", length(distance_m2_flat)),
+                                    rep("Mock 3", length(distance_m3_flat)),
+                                    rep("Mock 4", length(distance_m4_flat)),
+                                    rep("Mock 5", length(distance_m5_flat)),
+                                    rep("Mock 6", length(distance_m6_flat)),
+                                    rep("Mock 7", length(distance_m7_flat)),
+                                    rep("Mock 8", length(distance_m1_flat)),
+                                    rep("Mock 9", length(distance_m1_flat))),
+                           distance = c(distance_m1_flat, distance_m2_flat, distance_m3_flat, distance_m4_flat, distance_m5_flat, distance_m6_flat, distance_m7_flat, distance_m1_flat, distance_m1_flat))
+
+plot_dist_box <- ggplot(data = distance_box, aes(x = mock, y = distance)) +
+  geom_boxplot(outlier.size = 3) +
+  geom_point(data = aggregate(distance ~ mock, data = distance_box, mean),
+             aes(x = mock, y = distance), color = "darkred", size = 7) +
+  labs(x = NULL, y = "Phylogenetic distance") +
+  paper_theme_fab +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5)) +
+  scale_x_discrete(labels = c("Mock 1" = "Mock 1/\nCo-culture 1", "Mock 2" = "Mock 2/\nCo-culture 2", "Mock 3" = "Mock 3/\nCo-culture 3", "Mock 4" = "Mock 4", "Mock 5" = "Mock 5", "Mock 6" = "Mock 6", "Mock 7" = "Mock 7", "Mock 8" = "Mock 8", "Mock 9" = "Mock 9"))
+print(plot_dist_box)
 
 # 6. Combined plots ----
 
@@ -143,10 +192,10 @@ community_members <- data.frame(community = c("Mock 1\nCo-culture 1", "Mock 1\nC
                                            "S. mitis", "S. mutans", "S. oralis", "S. salivarius", "S. sanguinis", "S. sobrinus", "V. parvula"))
 
 community_members_wide <- community_members %>% 
-  group_by(community) %>% 
-  mutate(row = row_number()) %>% 
+  dplyr::group_by(community) %>% 
+  dplyr::mutate(row = row_number()) %>% 
   pivot_wider(names_from = community, values_from = member) %>% 
-  select(-row)
+  dplyr::select(-row)
 community_members_wide[is.na(community_members_wide)] <- ""
 
 table_theme <- ttheme_minimal(core = list(fg_params = list(fontface = 3, cex = 1.2)),
@@ -171,7 +220,7 @@ community_table <- gtable::gtable_add_grob(community_table, grobs = segmentsGrob
 
 p_table_community <- grid.arrange(community_table)
 
-plot_phylogenetic <- cowplot::plot_grid(plot_nj_tree, plot_mean_dist_mocks, labels = c("B", "C"), label_size = 34, hjust = -0.15, ncol = 2, nrow = 1)
+plot_phylogenetic <- cowplot::plot_grid(plot_nj_tree, plot_dist_box, labels = c("B", "C"), label_size = 34, hjust = -0.15, ncol = 2, nrow = 1)
 print(plot_phylogenetic)
 
 plot_phylo_table <- cowplot::plot_grid(p_table_community, NULL, plot_phylogenetic, labels = c("A", "", ""), label_size = 34, hjust = -0.15, nrow = 3, ncol = 1, rel_heights = c(0.6, 0.05, 1))
