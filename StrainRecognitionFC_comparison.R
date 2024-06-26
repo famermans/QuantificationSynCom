@@ -105,7 +105,7 @@ FCM_SoFn_mean$ID <- gsub("_Z_0h", "", FCM_SoFn_mean$ID)
 #FCM_SoFn_mean$Predicted_label <- gsub("\\*", "", FCM_SoFn_mean$Predicted_label)
 FCM_SoFn_mean <- FCM_SoFn_mean[, c("ID", "Predicted_label", "Concentration")]
 FCM_SoFn_mean_rect <- reshape2::dcast(FCM_SoFn_mean, ID ~ Predicted_label)
-FCM_SoFn_mean_rect$Type <- c(rep("Co-culture", 12), rep("Mock", 5))
+FCM_SoFn_mean_rect$Type <- c(rep("Co-culture", 18), rep("Mock", 5))
 FCM_SoFn_mean_prop <- FCM_SoFn_mean_rect
 FCM_SoFn_mean_prop[, -c(1, 4)] <- sweep(as.matrix(FCM_SoFn_mean_prop[, -c(1, 4)]), 1, rowSums(FCM_SoFn_mean_prop[, -c(1, 4)]), FUN = "/") %>% 
   as.data.frame()
@@ -375,6 +375,7 @@ plot_relative_all2_copycorrected_sample <- ggplot(data = all_data2_copycorrected
 print(plot_relative_all2_copycorrected_sample)
 
 
+### 5.1.1. Mocks ----
 all_data2_mocks <- subset(all_data2_copycorrected_melted, Type == "Mock")
 all_data2_mocks$ID <- gsub("Mix1", "Mock 1", all_data2_mocks$ID)
 all_data2_mocks$ID <- gsub("Mix2", "Mock 2", all_data2_mocks$ID)
@@ -422,43 +423,6 @@ plot_mocks <- ggplot(data = all_data2_mocks, aes(x = Technique, y = Relative_abu
                     labels = c("Fn" = expression(italic("F. nucleatum")), "Pg" = expression(italic("P. gingivalis")), "So" = expression(italic("S. oralis")), "Vp" = expression(italic("V. parvula")), "Other" = "Other")) +
   scale_x_discrete(labels = c("Actual" = "Theoretical", "FCM_Model_SoFn" = "FCM SoFn", "FCM_Model_SoFnPg" = "FCM SoFnPg", "FCM_Model_SoFnPgVp" = "FCM SoFnPgVp", "Illumina" = "Illumina", "qPCR" = "qPCR"))
 print(plot_mocks)
-
-all_data2_cocult <- subset(all_data2_copycorrected_melted, Type == "Co-culture")
-all_data2_cocult$ID <- as.factor(all_data2_cocult$ID)
-order_IDs <- c("Co1_A_24h", "Co1_B_24h", "Co1_C_24h",
-               "Co1_A_48h", "Co1_B_48h", "Co1_C_48h",
-               "Co2_A_24h", "Co2_B_24h", "Co2_C_24h",
-               "Co2_A_48h", "Co2_B_48h", "Co2_C_48h",
-               "Co3_A_24h", "Co3_B_24h", "Co3_C_24h",
-               "Co3_A_48h", "Co3_B_48h", "Co3_C_48h")
-all_data2_cocult$ID <- factor(all_data2_cocult$ID, levels = order_IDs)
-
-plot_cocult <- ggplot(data = all_data2_cocult, aes(x = Technique, y = Relative_abundance, fill = Strain)) +
-  geom_bar(position = "stack", stat = "identity", color = "black") +
-  facet_wrap(~ ID, ncol = 3,
-             labeller = labeller(ID = c(Co1_A_24h = "Co-culture 1A 24h", Co1_B_24h = "Co-culture 1B 24h", Co1_C_24h = "Co-culture 1C 24h",
-                                        Co1_A_48h = "Co-culture 1A 48h", Co1_B_48h = "Co-culture 1B 48h", Co1_C_48h = "Co-culture 1C 48h",
-                                        Co2_A_24h = "Co-culture 2A 24h", Co2_B_24h = "Co-culture 2B 24h", Co2_C_24h = "Co-culture 2C 24h",
-                                        Co2_A_48h = "Co-culture 2A 48h", Co2_B_48h = "Co-culture 2B 48h", Co2_C_48h = "Co-culture 2C 48h",
-                                        Co3_A_24h = "Co-culture 3A 24h", Co3_B_24h = "Co-culture 3B 24h", Co3_C_24h = "Co-culture 3C 24h",
-                                        Co3_A_48h = "Co-culture 3A 48h", Co3_B_48h = "Co-culture 3B 48h", Co3_C_48h = "Co-culture 3C 48h"))) +
-  theme_bw() +
-  labs(x = "Technique", y = "Relative abundance (%)") +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5),
-        legend.position = "bottom",
-        axis.text = element_text(size = 18),
-        axis.title.y = element_text(size = 22),
-        axis.title.x = element_blank(),
-        legend.title = element_blank(),
-        legend.text = element_text(size = 22),
-        strip.text = element_text(size = 18),
-        legend.text.align = 0,
-        panel.grid = element_blank()) +
-  scale_fill_manual(values = c("Fn" = "#F8766D", "Pg" = "#E38900", "So" = "#C49A00", "Vp" = "#99A800", "Other" = "#E76BF3"),
-                    labels = c("Fn" = expression(italic("F. nucleatum")), "Pg" = expression(italic("P. gingivalis")), "So" = expression(italic("S. oralis")), "Vp" = expression(italic("V. parvula")), "Other" = "Other")) +
-  scale_x_discrete(labels = c("FCM_Model_SoFn" = "FCM SoFn", "FCM_Model_SoFnPg" = "FCM SoFnPg", "FCM_Model_SoFnPgVp" = "FCM SoFnPgVp", "Illumina" = "Illumina", "qPCR" = "qPCR"))
-print(plot_cocult)
-
 
 mocks_12k_melted <- reshape2::melt(mocks_12k, id.vars = c("ID", "Technique"), variable.name = c("Strain"), value.name = c("Relative_abundance"))
 mocks_12k_melted$ID <- gsub("Mix", "Mock ", mocks_12k_melted$ID)
@@ -508,6 +472,198 @@ plot_mocks_12k_2 <- ggplot(data = mocks_12k_2_melted, aes(x = Technique, y = Rel
                     labels = c("Fn" = expression(italic("F. nucleatum")), "Pg" = expression(italic("P. gingivalis")), "So" = expression(italic("S. oralis")), "Vp" = expression(italic("V. parvula")), "An" = expression(italic("A. naeslundii")), "Av" = expression(italic("A. viscosus")), "Aa" = expression(italic("A. actinomycetemcomitans")), "Sg" = expression(italic("S. gordonii")), "Smi" = expression(italic("S. mitis")), "Smu" = expression(italic("S. mutans")), "Pi" = expression(italic("P. intermedia")), "Ssal" = expression(italic("S. salivarius")), "Ssan" = expression(italic("S. sanguinis")), "Ssob" = expression(italic("S. sobrinus")))) +
   scale_x_discrete(labels = c("Actual" = "Theoretical", "FCM - In vitro" = expression(paste("FCM - ", italic("In vitro"))), "FCM - In silico" = expression(paste("FCM - ", italic("In silico")))))
 print(plot_mocks_12k_2)
+
+
+### 5.1.2. Co-cultures ----
+all_data2_cocult <- subset(all_data2_copycorrected_melted, Type == "Co-culture")
+all_data2_cocult$ID <- as.factor(all_data2_cocult$ID)
+order_IDs <- c("Co1_A_24h", "Co1_B_24h", "Co1_C_24h",
+               "Co1_A_48h", "Co1_B_48h", "Co1_C_48h",
+               "Co2_A_24h", "Co2_B_24h", "Co2_C_24h",
+               "Co2_A_48h", "Co2_B_48h", "Co2_C_48h",
+               "Co3_A_24h", "Co3_B_24h", "Co3_C_24h",
+               "Co3_A_48h", "Co3_B_48h", "Co3_C_48h")
+all_data2_cocult$ID <- factor(all_data2_cocult$ID, levels = order_IDs)
+
+plot_cocult <- ggplot(data = all_data2_cocult, aes(x = Technique, y = Relative_abundance, fill = Strain)) +
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  facet_wrap(~ ID, ncol = 3,
+             labeller = labeller(ID = c(Co1_A_24h = "Co-culture 1A 24h", Co1_B_24h = "Co-culture 1B 24h", Co1_C_24h = "Co-culture 1C 24h",
+                                        Co1_A_48h = "Co-culture 1A 48h", Co1_B_48h = "Co-culture 1B 48h", Co1_C_48h = "Co-culture 1C 48h",
+                                        Co2_A_24h = "Co-culture 2A 24h", Co2_B_24h = "Co-culture 2B 24h", Co2_C_24h = "Co-culture 2C 24h",
+                                        Co2_A_48h = "Co-culture 2A 48h", Co2_B_48h = "Co-culture 2B 48h", Co2_C_48h = "Co-culture 2C 48h",
+                                        Co3_A_24h = "Co-culture 3A 24h", Co3_B_24h = "Co-culture 3B 24h", Co3_C_24h = "Co-culture 3C 24h",
+                                        Co3_A_48h = "Co-culture 3A 48h", Co3_B_48h = "Co-culture 3B 48h", Co3_C_48h = "Co-culture 3C 48h"))) +
+  theme_bw() +
+  labs(x = "Technique", y = "Relative abundance (%)") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5),
+        legend.position = "bottom",
+        axis.text = element_text(size = 18),
+        axis.title.y = element_text(size = 22),
+        axis.title.x = element_blank(),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 22),
+        strip.text = element_text(size = 18),
+        legend.text.align = 0,
+        panel.grid = element_blank()) +
+  scale_fill_manual(values = c("Fn" = "#F8766D", "Pg" = "#E38900", "So" = "#C49A00", "Vp" = "#99A800", "Other" = "#E76BF3"),
+                    labels = c("Fn" = expression(italic("F. nucleatum")), "Pg" = expression(italic("P. gingivalis")), "So" = expression(italic("S. oralis")), "Vp" = expression(italic("V. parvula")), "Other" = "Other")) +
+  scale_x_discrete(labels = c("FCM_Model_SoFn" = "FCM SoFn", "FCM_Model_SoFnPg" = "FCM SoFnPg", "FCM_Model_SoFnPgVp" = "FCM SoFnPgVp", "Illumina" = "Illumina", "qPCR" = "qPCR"))
+print(plot_cocult)
+
+all_data2_cocult_box <- all_data2_cocult
+all_data2_cocult_box$Culture <- substr(all_data2_cocult_box$ID, 1, 3)
+all_data2_cocult_box$Replicate <- substr(all_data2_cocult_box$ID, 5, 5)
+all_data2_cocult_box$Timepoint <- substr(all_data2_cocult_box$ID, 7, 9)
+all_data2_cocult_box <- all_data2_cocult_box[, c(1, 3:8)]
+all_data2_cocult_box_clean <- all_data2_cocult_box[all_data2_cocult_box$Relative_abundance != 0, ]
+
+plot_cocult_box <- ggplot(data = all_data2_cocult_box_clean, aes(x = Timepoint, y = Relative_abundance, fill = Strain)) +
+  geom_boxplot(position = position_dodge(width = 0.8)) +
+  geom_text(aes(label = Replicate, y = Relative_abundance), position = position_dodge(width = 0.8), size = 6) +
+  facet_grid(Technique ~ Culture,
+             labeller = labeller(Culture = c(Co1 = "Co-culture 1", Co2 = "Co-culture 2", Co3 = "Co-culture 3"),
+                                 Technique = c(FCM_Model_SoFn = "FCM SoFn", FCM_Model_SoFnPg = "FCM SoFnPg", FCM_Model_SoFnPgVp = "FCM SoFnPgVp", qPCR = "qPCR", Illumina = "Illumina"))) +
+  theme_bw() +
+  labs(y = "Relative abudnance (%)", fill = "Strain") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5),
+        legend.position = "bottom",
+        axis.text = element_text(size = 18),
+        axis.title.y = element_text(size = 22),
+        axis.title.x = element_blank(),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 22),
+        strip.text = element_text(size = 18),
+        legend.text.align = 0,
+        panel.grid = element_blank()) +
+  scale_fill_manual(values = c("Fn" = "#F8766D", "Pg" = "#E38900", "So" = "#C49A00", "Vp" = "#99A800", "Other" = "#E76BF3"),
+                    labels = c("Fn" = expression(italic("F. nucleatum")), "Pg" = expression(italic("P. gingivalis")), "So" = expression(italic("S. oralis")), "Vp" = expression(italic("V. parvula"))))
+print(plot_cocult_box)
+
+plot_cocult_box2 <- ggplot(data = all_data2_cocult_box_clean, aes(x = Timepoint, y = Relative_abundance, fill = Strain)) +
+  geom_boxplot(position = position_dodge(width = 0.8)) +
+  #geom_text(aes(label = Replicate, y = Relative_abundance), position = position_dodge(width = 0.8), size = 5) +
+  ggrepel::geom_text_repel(aes(label = Replicate, y = Relative_abundance), position = position_dodge(width = 0.8), size = 5) +
+  facet_grid(Culture ~ Technique,
+             labeller = labeller(Culture = c(Co1 = "Co-culture 1", Co2 = "Co-culture 2", Co3 = "Co-culture 3"),
+                                 Technique = c(FCM_Model_SoFn = "FCM SoFn", FCM_Model_SoFnPg = "FCM SoFnPg", FCM_Model_SoFnPgVp = "FCM SoFnPgVp", qPCR = "qPCR", Illumina = "Illumina"))) +
+  theme_bw() +
+  labs(y = "Relative abundance (%)", fill = "Strain") +
+  theme(axis.text.x = element_text(vjust = 0.5),
+        legend.position = "bottom",
+        axis.text = element_text(size = 18),
+        axis.title.y = element_text(size = 22),
+        axis.title.x = element_blank(),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 22),
+        strip.text = element_text(size = 18),
+        legend.text.align = 0,
+        panel.grid = element_blank()) +
+  scale_fill_manual(values = c("Fn" = "#F8766D", "Pg" = "#E38900", "So" = "#C49A00", "Vp" = "#99A800", "Other" = "#E76BF3"),
+                    labels = c("Fn" = expression(italic("F. nucleatum")), "Pg" = expression(italic("P. gingivalis")), "So" = expression(italic("S. oralis")), "Vp" = expression(italic("V. parvula"))))
+print(plot_cocult_box2)
+
+all_data2_cocult_box_clean2 <- all_data2_cocult_box[all_data2_cocult_box$Strain != "Other", ]
+all_data2_cocult_box_clean2 <- all_data2_cocult_box_clean2 %>% 
+  dplyr::filter(!(Strain == "Pg" & Culture == "Co1" & Technique %in% c("FCM_Model_SoFn", "Illumina", "qPCR"))) %>% 
+  dplyr::filter(!(Strain == "Vp" & Culture == "Co1" & Technique %in% c("FCM_Model_SoFn", "FCM_Model_SoFnPg", "Illumina", "qPCR"))) %>% 
+  dplyr::filter(!(Strain == "Vp" & Culture == "Co2" & Technique %in% c("FCM_Model_SoFn", "FCM_Model_SoFnPg", "Illumina", "qPCR"))) %>% 
+  dplyr::filter(!(Strain %in% c("Pg", "Vp") & Technique == "FCM_Model_SoFn")) %>% 
+  dplyr::filter(!(Strain %in% c("Vp") & Technique == "FCM_Model_SoFnPg"))
+
+plot_cocult_box3 <- ggplot(data = all_data2_cocult_box_clean2, aes(x = Technique, y = Relative_abundance, fill = Strain)) +
+  geom_boxplot(position = position_dodge(width = 0.8)) +
+  facet_grid(Culture ~ Timepoint,
+             labeller = labeller(Culture = c(Co1 = "Co-culture 1", Co2 = "Co-culture 2", Co3 = "Co-culture 3"))) +
+  theme_bw() +
+  labs(y = "Relative abundance (%)", fill = "Strain") +
+  theme(axis.text.x = element_text(vjust = 0.5, angle = 90),
+        legend.position = "bottom",
+        axis.text = element_text(size = 18),
+        axis.title.y = element_text(size = 22),
+        axis.title.x = element_blank(),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 22),
+        strip.text = element_text(size = 18),
+        legend.text.align = 0,
+        panel.grid = element_blank()) +
+  scale_fill_manual(values = c("Fn" = "#F8766D", "Pg" = "#E38900", "So" = "#C49A00", "Vp" = "#99A800"),
+                    labels = c("Fn" = expression(italic("F. nucleatum")), "Pg" = expression(italic("P. gingivalis")), "So" = expression(italic("S. oralis")), "Vp" = expression(italic("V. parvula")))) +
+  scale_x_discrete(labels = c("FCM_Model_SoFn" = "FCM SoFn", "FCM_Model_SoFnPg" = "FCM SoFnPg", "FCM_Model_SoFnPgVp" = "FCM SoFnPgVp", "Illumina" = "Illumina", "qPCR" = "qPCR"))
+print(plot_cocult_box3)
+
+plot_cocult_box4 <- ggplot(data = all_data2_cocult_box_clean2, aes(x = Timepoint, y = Relative_abundance, fill = Strain)) +
+  geom_boxplot(position = position_dodge(width = 0.8)) +
+  ggrepel::geom_text_repel(aes(label = Replicate, y = Relative_abundance), position = position_dodge(width = 0.8), size = 5) +
+  facet_grid(Culture ~ Technique,
+             labeller = labeller(Culture = c(Co1 = "Co-culture 1", Co2 = "Co-culture 2", Co3 = "Co-culture 3"),
+                                 Technique = c(FCM_Model_SoFn = "FCM SoFn", FCM_Model_SoFnPg = "FCM SoFnPg", FCM_Model_SoFnPgVp = "FCM SoFnPgVp", qPCR = "qPCR", Illumina = "Illumina"))) +
+  theme_bw() +
+  labs(y = "Relative abundance (%)", fill = "Strain") +
+  theme(axis.text.x = element_text(vjust = 0.5),
+        legend.position = "bottom",
+        axis.text = element_text(size = 18),
+        axis.title.y = element_text(size = 22),
+        axis.title.x = element_blank(),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 22),
+        strip.text = element_text(size = 18),
+        legend.text.align = 0,
+        panel.grid = element_blank()) +
+  scale_fill_manual(values = c("Fn" = "#F8766D", "Pg" = "#E38900", "So" = "#C49A00", "Vp" = "#99A800"),
+                    labels = c("Fn" = expression(italic("F. nucleatum")), "Pg" = expression(italic("P. gingivalis")), "So" = expression(italic("S. oralis")), "Vp" = expression(italic("V. parvula"))))
+print(plot_cocult_box4)
+
+
+### 5.1.3. FCM wrongly predicted strains ----
+# Mocks
+rel_mocks_FCM <- subset(all_data2_mocks, Technique == "FCM_Model_SoFn" | Technique == "FCM_Model_SoFnPg" | Technique == "FCM_Model_SoFnPgVp")
+rel_mocks_FCM <- rel_mocks_FCM[rel_mocks_FCM$Strain != "Other", ]
+
+rel_mocks_FCM_wider <- rel_mocks_FCM %>% 
+  pivot_wider(names_from = Strain, values_from = Relative_abundance)
+
+rel_mocks_FCM_M1M8M9 <- subset(rel_mocks_FCM_wider, ID == "Mock 1" | ID == "Mock 8" | ID == "Mock 9")
+rel_mocks_FCM_M1M8M9$wrong <- rel_mocks_FCM_M1M8M9$Pg + rel_mocks_FCM_M1M8M9$Vp
+
+rel_mocks_FCM_M2 <- subset(rel_mocks_FCM_wider, ID == "Mock 2")
+rel_mocks_FCM_M2$wrong <- rel_mocks_FCM_M2$Vp
+
+rel_mocks_FCM_M3 <- subset(rel_mocks_FCM_wider, ID == "Mock 3")
+rel_mocks_FCM_M3$wrong <- 0
+
+rel_mocks_FCM_wider2 <- rbind(rel_mocks_FCM_M1M8M9, rel_mocks_FCM_M2, rel_mocks_FCM_M3)
+
+# Co-cultures
+rel_cocult_FCM <- subset(all_data2_cocult_box, Technique == "FCM_Model_SoFn" | Technique == "FCM_Model_SoFnPg" | Technique == "FCM_Model_SoFnPgVp")
+rel_cocult_FCM <- rel_cocult_FCM[rel_cocult_FCM$Strain != "Other", ]
+
+rel_cocult_FCM_wider <- rel_cocult_FCM %>% 
+  pivot_wider(names_from = Strain, values_from = Relative_abundance)
+
+rel_cocult_FCM_Co1 <- subset(rel_cocult_FCM_wider, Culture == "Co1")
+rel_cocult_FCM_Co1$wrong <- rel_cocult_FCM_Co1$Pg + rel_cocult_FCM_Co1$Vp
+
+rel_cocult_FCM_Co2 <- subset(rel_cocult_FCM_wider, Culture == "Co2")
+rel_cocult_FCM_Co2$wrong <- rel_cocult_FCM_Co2$Vp
+
+rel_cocult_FCM_Co3 <- subset(rel_cocult_FCM_wider, Culture == "Co3")
+rel_cocult_FCM_Co3$wrong <- 0
+
+rel_cocult_FCM_wider2 <- rbind(rel_cocult_FCM_Co1, rel_cocult_FCM_Co2, rel_cocult_FCM_Co3)
+
+rel_cocult_FCM_mean <- rel_cocult_FCM_wider2 %>% 
+  dplyr::group_by(Culture, Technique, Timepoint) %>% 
+  summarize(Fn_mean = mean(Fn, na.rm = TRUE),
+            So_mean = mean(So, na.rm = TRUE),
+            Pg_mean = mean(Pg, na.rm = TRUE),
+            Vp_mean = mean(Vp, na.rm = TRUE),
+            wrong_mean = mean(wrong, na.rm = TRUE),
+            Fn_sd = sd(Fn, na.rm = TRUE),
+            So_sd = sd(So, na.rm = TRUE),
+            Pg_sd = sd(Pg, na.rm = TRUE),
+            Vp_sd = sd(Vp, na.rm = TRUE),
+            wrong_sd = sd(wrong, na.rm = TRUE))
 
 
 ## 5.2. Absolute abundance ----
@@ -646,6 +802,62 @@ plot_cocult_absolute <- ggplot(data = absolute_cocult_melted, aes(x = Technique,
                     labels = c("Fn" = expression(italic("F. nucleatum")), "Pg" = expression(italic("P. gingivalis")), "So" = expression(italic("S. oralis")), "Vp" = expression(italic("V. parvula")))) +
   scale_y_continuous(breaks = c(0, 500000000, 1000000000, 2000000000, 3000000000, 4000000000, 5000000000, 6000000000))
 print(plot_cocult_absolute)
+
+
+absolute_cocult_box <- absolute_cocult
+absolute_cocult_box$Culture <- substr(absolute_cocult_box$ID, 1, 3)
+absolute_cocult_box$Replicate <- substr(absolute_cocult_box$ID, 5, 5)
+absolute_cocult_box$Timepoint <- substr(absolute_cocult_box$ID, 7, 9)
+
+absolute_cocult_box_melted <- reshape2::melt(absolute_cocult_box, id.vars = c("Replicate", "Timepoint", "Culture", "Technique", "ID"), variable.name = "Strain", value.name = "Concentration")
+absolute_cocult_box_melted_clean <- absolute_cocult_box_melted[absolute_cocult_box_melted$Concentration != 0, ]
+
+plot_cocult_absolute_box <- ggplot(data = absolute_cocult_box_melted_clean, aes(x = Timepoint, y = Concentration, fill = Strain)) +
+  geom_boxplot(position = position_dodge(width = 0.8)) +
+  geom_text(aes(label = Replicate, y = Concentration), position = position_dodge(width = 0.8), size = 6) +
+  facet_grid(Technique ~ Culture, scales = "free_y",
+             labeller = labeller(Culture = c(Co1 = "Co-culture 1", Co2 = "Co-culture 2", Co3 = "Co-culture 3"),
+                                 Technique = c(FCM = "Flow cytometry", qPCR = "qPCR"))) +
+  theme_bw() +
+  labs(y = "Concentration (cells/mL)", fill = "Strain") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5),
+        legend.position = "bottom",
+        axis.text = element_text(size = 18),
+        axis.title.y = element_text(size = 22),
+        axis.title.x = element_blank(),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 22),
+        strip.text = element_text(size = 18),
+        legend.text.align = 0,
+        panel.grid = element_blank()) +
+  scale_fill_manual(values = c("Fn" = "#F8766D", "Pg" = "#E38900", "So" = "#C49A00", "Vp" = "#99A800"),
+                    labels = c("Fn" = expression(italic("F. nucleatum")), "Pg" = expression(italic("P. gingivalis")), "So" = expression(italic("S. oralis")), "Vp" = expression(italic("V. parvula"))))
+print(plot_cocult_absolute_box)
+
+plot_cocult_absolute_box2 <- ggplot(data = absolute_cocult_box_melted_clean, aes(x = Timepoint, y = Concentration, fill = Strain)) +
+  geom_boxplot(position = position_dodge(width = 0.8)) +
+  #geom_text(aes(label = Replicate, y = Concentration), position = position_dodge(width = 0.8), size = 5) +
+  ggrepel::geom_text_repel(aes(label = Replicate, y = Concentration), position = position_dodge(width = 0.8), size = 5) +
+  scale_y_log10() +
+  facet_grid(Culture ~ Technique,
+             labeller = labeller(Culture = c(Co1 = "Co-culture 1", Co2 = "Co-culture 2", Co3 = "Co-culture 3"),
+                                 Technique = c(FCM = "Flow cytometry", qPCR = "qPCR"))) +
+  theme_bw() +
+  labs(y = "Concentration (cells/mL)", fill = "Strain") +
+  theme(axis.text.x = element_text(vjust = 0.5),
+        legend.position = "bottom",
+        axis.text = element_text(size = 18),
+        axis.title.y = element_text(size = 22),
+        axis.title.x = element_blank(),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 22),
+        strip.text = element_text(size = 18),
+        legend.text.align = 0,
+        panel.grid = element_blank()) +
+  scale_fill_manual(values = c("Fn" = "#F8766D", "Pg" = "#E38900", "So" = "#C49A00", "Vp" = "#99A800"),
+                    labels = c("Fn" = expression(italic("F. nucleatum")), "Pg" = expression(italic("P. gingivalis")), "So" = expression(italic("S. oralis")), "Vp" = expression(italic("V. parvula"))))
+print(plot_cocult_absolute_box2)
+
 
 # FCM only --> look at growth (cell numbers)
 absolute_cocult_FCM <- absolute_cocult_melted[absolute_cocult_melted$Technique == "FCM", ]
