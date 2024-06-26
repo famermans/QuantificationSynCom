@@ -260,6 +260,7 @@ print(p_density_SSC_H)
 
 
 # 5. Singlet analysis ----
+## 5.1. Gating ----
 
 # Axenic cultures
 p_singlets_pure_FSC <- xyplot(`FSC-W`~`FSC-H`, data = flowData_transformed_BHI_gated[c(1, 7, 13, 19, 21, 23, 29, 31, 37, 43, 49, 55, 61, 67, 73, 79, 85)],
@@ -322,6 +323,9 @@ print(p_gating_strat_singlets)
 
 flowData_transformed_BHI_singlets <- Subset(flowData_transformed_BHI_gated, polyGateSinglets)
 
+
+## 5.2. Calculate concentrations ----
+
 singlets <- flowCore::filter(flowData_transformed_BHI_gated, polyGateSinglets)
 SingletCount <- summary(singlets)
 SingletCount <- toTable(SingletCount)
@@ -379,6 +383,9 @@ colnames(singlets_mean_mocks)[colnames(singlets_mean_mocks) == "percent"] <- "pe
 singlets_mean_mocks <- singlets_mean_mocks[, c(1, 4:6)]
 row.names(singlets_mean_mocks) <- NULL
 
+
+## 5.3. Visualize mocks ----
+
 singlets_mocks <- merge(singlets_mocks, singlets_mean_mocks, by = "Mix_ID")
 singlets_melted <- reshape2::melt(singlets_mocks, id.vars = c("Mix_ID"))
 singlets_melted$type <- c(rep(c("Theoretical"), 15), rep(c("Measured"), 15))
@@ -406,6 +413,9 @@ p_singlets_mocks_percentage <- ggplot(data = singlets_melted_percentage, aes(x =
   scale_color_manual(values = c("Measured" = "darkred", "Theoretical" = "blue3"),
                      labels = c("Measured" = "Measured", "Theoretical" = "Calculated"))
 print(p_singlets_mocks_percentage)
+
+
+## 5.4. Visualize co-cultures ----
 
 singlets_cocult <- subset(singlets_mean, Strain == "Co1" | Strain == "Co2" | Strain == "Co3")
 singlets_cocult_mean <- aggregate(concentration_singlets ~ Strain + Replicate + Timepoint, data = singlets_cocult, FUN = mean)
@@ -461,6 +471,126 @@ p_singlets_cocult_percentage2 <- ggplot(data = singlets_cocult_mean, aes(x = Tim
 print(p_singlets_cocult_percentage2)
 
 
+## 5.5. FCM vs qPCR ----
+# Run 6 before running this part!
+
+# Concentration of qPCR are in cells/mL
+qPCR_mocks <- readRDS(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RDS_objects/qPCR_mocks.rds")
+qPCR_cocult <- readRDS(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RDS_objects/qPCR_cocult.rds")
+
+qPCR_synco <- rbind(qPCR_mocks, qPCR_cocult)
+qPCR_synco$qPCR_total <- qPCR_synco$qPCR_So + qPCR_synco$qPCR_Fn + qPCR_synco$qPCR_Pg + qPCR_synco$qPCR_Vp
+qPCR_synco$qPCR_total_SD <- sqrt(qPCR_synco$qPCR_So_SD^2 + qPCR_synco$qPCR_Fn_SD^2 + qPCR_synco$qPCR_Pg_SD^2 + qPCR_synco$qPCR_Vp_SD^2)
+qPCR_tot <- qPCR_synco[, c(1, 10, 11)]
+
+# Concentrations of FCM are in cells/mL
+FCM_synco <- cell_concentrations_mean
+FCM_synco$FCM_total_SD <- cell_concentrations_sd$Concentration
+FCM_synco <- FCM_synco %>% 
+  rename(FCM_total = Concentration)
+FCM_synco$Sample_Name <- paste(FCM_synco$Merge, FCM_synco$Timepoint, sep = "_")
+FCM_synco$Sample_Name <- gsub("_NA_NA", "", FCM_synco$Sample_Name)
+FCM_synco <- FCM_synco[, c(7, 4, 6)]
+
+conc_synco <- merge(qPCR_tot, FCM_synco, by = "Sample_Name")
+conc_synco$FCM_total_SD[is.na(conc_synco$FCM_total_SD)] <- 0
+
+# Calculate difference cell counts between qPCR and FCM
+diff_conc_synco <- data.frame(Sample_Name = conc_synco$Sample_Name,
+                              Conc_diff = conc_synco$qPCR_total - conc_synco$FCM_total,
+                              SD_diff = sqrt(conc_synco$qPCR_total_SD^2 + conc_synco$FCM_total_SD^2))
+
+singlets_synco <- singlets_mean
+singlets_synco$Sample_Name <- paste(singlets_synco$Strain, singlets_synco$Replicate, singlets_synco$Timepoint, sep = "_")
+singlets_synco$Sample_Name <- gsub("_NA_NA", "", singlets_synco$Sample_Name)
+singlets_synco$Conc_mult <- singlets_synco$concentration_total - singlets_synco$concentration_singlets
+singlets_synco$Rel_mult <- 100 - singlets_synco$percent
+singlets_synco <- singlets_synco %>% 
+  rename(Conc_sing = concentration_singlets,
+         Rel_sing = percent)
+
+singlets_synco <- singlets_synco[, c(7, 4, 5, 8, 9)]
+
+synco_diff <- merge(diff_conc_synco, singlets_synco, by = "Sample_Name")
+synco_diff$Type <- c(rep("Co-culture", 18), rep("Mock", 5))
+
+# Plot difference vs concentration of singlets
+p_diff_1 <- ggplot(data = synco_diff, aes(x = Conc_diff, y = Conc_sing, color = Type)) +
+  geom_point(size = 7) +
+  labs(x = "Δ Concentration (cells/mL)", y = "Concentration singlets (events/mL)", color = NULL) +
+  scale_color_manual(values = c("darkred", "#A3A500")) +
+  paper_theme_fab
+print(p_diff_1)
+
+# Plot difference vs concentration of multiplets
+p_diff_2 <- ggplot(data = synco_diff, aes(x = Conc_diff, y = Conc_mult, color = Type)) +
+  geom_point(size = 7) +
+  labs(x = "Δ Concentration (cells/mL)", y = "Concentration multiplets (events/mL)", color = NULL) +
+  scale_color_manual(values = c("darkred", "#A3A500")) +
+  paper_theme_fab
+print(p_diff_2)
+
+# Plot difference vs relative abundance singelts
+p_diff_3 <- ggplot(data = synco_diff, aes(x = Conc_diff, y = Rel_sing, color = Type)) +
+  geom_point(size = 7) +
+  labs(x = "Δ Concentration (cells/mL)", y = "Relative abundance singlets (%)", color = NULL) +
+  scale_color_manual(values = c("darkred", "#A3A500")) +
+  paper_theme_fab
+print(p_diff_3)
+
+# Plot difference vs relative abundance multiplets
+p_diff_4 <- ggplot(data = synco_diff, aes(x = Conc_diff, y = Rel_mult, color = Type)) +
+  geom_point(size = 7) +
+  labs(x = "Δ Concentration (cells/mL)", y = "Relative abundance multiplets (%)", color = NULL) +
+  scale_color_manual(values = c("darkred", "#A3A500")) +
+  paper_theme_fab
+print(p_diff_4)
+
+# Calculate correlation between difference and multiplets
+cor_diff <- data.frame(comp = c("all", "co-cult", "mock"),
+                       diff_conc_sing = c(cor(synco_diff$Conc_diff, synco_diff$Conc_sing),
+                                          cor(synco_diff$Conc_diff[c(1:18)], synco_diff$Conc_sing[c(1:18)]),
+                                          cor(synco_diff$Conc_diff[c(19:23)], synco_diff$Conc_sing[c(19:23)])),
+                       diff_conc_mult = c(cor(synco_diff$Conc_diff, synco_diff$Conc_mult),
+                                          cor(synco_diff$Conc_diff[c(1:18)], synco_diff$Conc_mult[c(1:18)]),
+                                          cor(synco_diff$Conc_diff[c(19:23)], synco_diff$Conc_mult[c(19:23)])),
+                       diff_conc_relsing = c(cor(synco_diff$Conc_diff, synco_diff$Rel_sing),
+                                             cor(synco_diff$Conc_diff[c(1:18)], synco_diff$Rel_sing[c(1:18)]),
+                                             cor(synco_diff$Conc_diff[c(19:23)], synco_diff$Rel_sing[c(19:23)])),
+                       diff_conc_relmult = c(cor(synco_diff$Conc_diff, synco_diff$Rel_mult),
+                                             cor(synco_diff$Conc_diff[c(1:18)], synco_diff$Rel_mult[c(1:18)]),
+                                             cor(synco_diff$Conc_diff[c(19:23)], synco_diff$Rel_mult[c(19:23)])))
+
+# Calculate correlations for synthetic communities with the same strains separately
+synco_diff$Strains <- substr(synco_diff$Sample_Name, 1, 4)
+synco_diff$Strains <- gsub("Co1_", "SoFn", synco_diff$Strains)
+synco_diff$Strains <- gsub("Mix1", "SoFn", synco_diff$Strains)
+synco_diff$Strains <- gsub("Mix8", "SoFn", synco_diff$Strains)
+synco_diff$Strains <- gsub("Mix9", "SoFn", synco_diff$Strains)
+synco_diff$Strains <- gsub("Co2_", "SoFnPg", synco_diff$Strains)
+synco_diff$Strains <- gsub("Mix2", "SoFnPg", synco_diff$Strains)
+synco_diff$Strains <- gsub("Co3_", "SoFnPgVp", synco_diff$Strains)
+synco_diff$Strains <- gsub("Mix3", "SoFnPgVp", synco_diff$Strains)
+
+synco_diff_SoFn <- subset(synco_diff, Strains == "SoFn")
+synco_diff_SoFnPg <- subset(synco_diff, Strains == "SoFnPg")
+synco_diff_SoFnPgVp <- subset(synco_diff, Strains == "SoFnPgVp")
+
+cor_diff_strains <- data.frame(strains = c("SoFn", "SoFnPg", "SoFnPgVp"),
+                               diff_conc_sing = c(cor(synco_diff_SoFn$Conc_diff, synco_diff_SoFn$Conc_sing),
+                                                  cor(synco_diff_SoFnPg$Conc_diff, synco_diff_SoFnPg$Conc_sing),
+                                                  cor(synco_diff_SoFnPgVp$Conc_diff, synco_diff_SoFnPgVp$Conc_sing)),
+                               diff_conc_mult = c(cor(synco_diff_SoFn$Conc_diff, synco_diff_SoFn$Conc_mult),
+                                                  cor(synco_diff_SoFnPg$Conc_diff, synco_diff_SoFnPg$Conc_mult),
+                                                  cor(synco_diff_SoFnPgVp$Conc_diff, synco_diff_SoFnPgVp$Conc_mult)),
+                               diff_conc_relsing = c(cor(synco_diff_SoFn$Conc_diff, synco_diff_SoFn$Rel_sing),
+                                                     cor(synco_diff_SoFnPg$Conc_diff, synco_diff_SoFnPg$Rel_sing),
+                                                     cor(synco_diff_SoFnPgVp$Conc_diff, synco_diff_SoFnPgVp$Rel_sing)),
+                               diff_conc_relmult = c(cor(synco_diff_SoFn$Conc_diff, synco_diff_SoFn$Rel_mult),
+                                                     cor(synco_diff_SoFnPg$Conc_diff, synco_diff_SoFnPg$Rel_mult),
+                                                     cor(synco_diff_SoFnPgVp$Conc_diff, synco_diff_SoFnPgVp$Rel_mult)))
+
+
 # 6. Cell concentrations ----
 ## 6.1. Calculate concentrations ----
 
@@ -485,6 +615,9 @@ cell_concentrations <- data.frame(Sample_name = flowCore::sampleNames(flowData_t
 # Calculate mean cell concentration per replicate
 cell_concentrations_mean <- aggregate(Concentration ~ Strain + Replicate + Timepoint, data = cell_concentrations, FUN = mean)
 cell_concentrations_mean$Merge <- paste(cell_concentrations_mean$Strain, cell_concentrations_mean$Replicate, sep = "_")
+
+cell_concentrations_sd <- aggregate(Concentration ~ Strain + Replicate + Timepoint, data = cell_concentrations, FUN = sd)
+cell_concentrations_sd$Merge <- paste(cell_concentrations_sd$Strain, cell_concentrations_sd$Replicate, sep = "_")
 
 volumes_mocks <- read.csv(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/20200512_Mocks.csv", header = T, sep = ";", stringsAsFactors = T)
 volumes_mocks$Merge <- paste(volumes_mocks$Strain, volumes_mocks$Replicate, sep = "_")
@@ -613,6 +746,15 @@ fcs_topre_BHI_SoFn <- c("20200617_Fabian_14strainID_BHI2_24h_Co1_A_1000_SG_A1.fc
                         "20200618_Fabian_14strainID_BHI2_48h_Co2_A_1000_SG_A2.fcs",
                         "20200618_Fabian_14strainID_BHI2_48h_Co2_B_1000_SG_B2.fcs",
                         "20200618_Fabian_14strainID_BHI2_48h_Co2_C_1000_SG_D1.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co3_A_1000_SG_A3.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co3_A_1000_SG_B3.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co3_B_1000_SG_E2.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co3_B_1000_SG_F2.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co3_C_1000_SG_G2.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co3_C_1000_SG_H2.fcs",
+                        "20200618_Fabian_14strainID_BHI2_48h_Co3_A_1000_SG_A3.fcs",
+                        "20200618_Fabian_14strainID_BHI2_48h_Co3_B_1000_SG_C2.fcs",
+                        "20200618_Fabian_14strainID_BHI2_48h_Co3_C_1000_SG_D2.fcs",
                         "20200512_Fabian_14strainID_BHI2_NA_Mix1_NA_1000_SG_A8.fcs",
                         "20200512_Fabian_14strainID_BHI2_NA_Mix1_NA_1000_SG_A9.fcs",
                         "20200512_Fabian_14strainID_BHI2_NA_Mix2_NA_1000_SG_A10.fcs",
@@ -633,7 +775,7 @@ test_pred_BHI2_SoFn <- left_join(test_pred_BHI2_SoFn, Sample_Info, by = c("Sampl
 test_pred_BHI2_SoFn <- test_pred_BHI2_SoFn %>%
   mutate(Concentration = (Counts*Dilution)/Volume)
 # Export as csv file
-write.csv2(file = "PredictedCellsSoFn.csv", test_pred_BHI2_SoFn)
+write.csv2(file = "PredictedCellsSoFn_pooled.csv", test_pred_BHI2_SoFn)
 
 
 ### Model for So, Fn and Pg in BHI2
@@ -1150,7 +1292,7 @@ fcs_names_SoFn_pooled <- c("20200512_Fabian_14strainID_BHI2_24h_So",
 
 #Model_RF_SoFn_pooled <- Phenoflow::RandomF_FCS(flowData_pooled_SoFn[fcs_names_SoFn_pooled], Sample_Info_pooled_SoFn, sample_col = "name_pooled_SoFn", target_label = "Strain", downsample = 12328, classification_type = "sample", param = paramRF , p_train = 0.75, seed = 777, cleanFCS = FALSE, timesplit = 0.1, TimeChannel = "Time", plot_fig = TRUE)
 #saveRDS(object = Model_RF_SoFn_pooled, file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RandomForest/RF_BHI_8param_SoFn_pooled.rds")
-Model_RF_SoFn_pooled <- readRDS(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RandomForest/RF_BHI_8param_SoFn_pooled.rds")
+Model_RF_SoFn_pooled <- readRDS(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/RandomForest/RF_BHI_8param_SoFn_pooled_50kevents.rds")
 
 ## Make predictions for relevant mixtures and co-cultures in BHI2
 fcs_topre_BHI_SoFn <- c("20200617_Fabian_14strainID_BHI2_24h_Co1_A_1000_SG_A1.fcs",
@@ -1171,6 +1313,15 @@ fcs_topre_BHI_SoFn <- c("20200617_Fabian_14strainID_BHI2_24h_Co1_A_1000_SG_A1.fc
                         "20200618_Fabian_14strainID_BHI2_48h_Co2_A_1000_SG_A2.fcs",
                         "20200618_Fabian_14strainID_BHI2_48h_Co2_B_1000_SG_B2.fcs",
                         "20200618_Fabian_14strainID_BHI2_48h_Co2_C_1000_SG_D1.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co3_A_1000_SG_A3.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co3_A_1000_SG_B3.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co3_B_1000_SG_E2.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co3_B_1000_SG_F2.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co3_C_1000_SG_G2.fcs",
+                        "20200617_Fabian_14strainID_BHI2_24h_Co3_C_1000_SG_H2.fcs",
+                        "20200618_Fabian_14strainID_BHI2_48h_Co3_A_1000_SG_A3.fcs",
+                        "20200618_Fabian_14strainID_BHI2_48h_Co3_B_1000_SG_C2.fcs",
+                        "20200618_Fabian_14strainID_BHI2_48h_Co3_C_1000_SG_D2.fcs",
                         "20200512_Fabian_14strainID_BHI2_NA_Mix1_NA_1000_SG_A8.fcs",
                         "20200512_Fabian_14strainID_BHI2_NA_Mix1_NA_1000_SG_A9.fcs",
                         "20200512_Fabian_14strainID_BHI2_NA_Mix2_NA_1000_SG_A10.fcs",
@@ -1191,7 +1342,7 @@ test_pred_BHI2_SoFn_pooled <- left_join(test_pred_BHI2_SoFn_pooled, Sample_Info,
 test_pred_BHI2_SoFn_pooled <- test_pred_BHI2_SoFn_pooled %>%
   mutate(Concentration = (Counts*Dilution)/Volume)
 # Export as csv file
-write.csv2(file = "PredictedCellsSoFn_pooled.csv", test_pred_BHI2_SoFn_pooled)
+write.csv2(file = "/Projects1/Fabian/Oral_microbiome/StrainRecognitionFCM/PredictionsRF/PredictedCellsSoFn_pooled_50kevents.csv", test_pred_BHI2_SoFn_pooled)
 
 
 ### Model for So, Fn and Pg in BHI2
