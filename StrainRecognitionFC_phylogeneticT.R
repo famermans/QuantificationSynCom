@@ -168,13 +168,13 @@ plot_dist_box <- ggplot(data = distance_box, aes(x = mock, y = distance)) +
   labs(x = NULL, y = "Phylogenetic distance") +
   paper_theme_fab +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5)) +
-  scale_x_discrete(labels = c("Mock 1" = "Mock 1/\nCo-culture 1", "Mock 2" = "Mock 2/\nCo-culture 2", "Mock 3" = "Mock 3/\nCo-culture 3", "Mock 4" = "Mock 4", "Mock 5" = "Mock 5", "Mock 6" = "Mock 6", "Mock 7" = "Mock 7", "Mock 8" = "Mock 8", "Mock 9" = "Mock 9"))
+  scale_x_discrete(labels = c("Mock 1" = "Mock 1\nCo-culture 1", "Mock 2" = "Mock 2\nCo-culture 2", "Mock 3" = "Mock 3\nCo-culture 3", "Mock 4" = "Mock 4", "Mock 5" = "Mock 5", "Mock 6" = "Mock 6", "Mock 7" = "Mock 7", "Mock 8" = "Mock 8", "Mock 9" = "Mock 9"))
 print(plot_dist_box)
 
 # 6. Combined plots ----
 
 # Create data frame with members of each mock/co-culture
-community_members <- data.frame(community = c("Mock 1\nCo-culture 1", "Mock 1\nCo-culture 1", "Mock 1\nCo-culture 1",
+community_members <- data.frame(community = c("Mock 1/8/9\nCo-culture 1", "Mock 1/8/9\nCo-culture 1", "Mock 1/8/9\nCo-culture 1",
                                               "Mock 2\nCo-culture 2", "Mock 2\nCo-culture 2", "Mock 2\nCo-culture 2", "Mock 2\nCo-culture 2",
                                               "Mock 3\nCo-culture 3", "Mock 3\nCo-culture 3", "Mock 3\nCo-culture 3", "Mock 3\nCo-culture 3", "Mock 3\nCo-culture 3",
                                               "Mock 4\n ", "Mock 4\n ", "Mock 4\n ", "Mock 4\n ", "Mock 4\n ", "Mock 4\n ", "Mock 4\n ", "Mock 4\n ", "Mock 4\n ",
